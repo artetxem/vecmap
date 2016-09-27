@@ -63,6 +63,7 @@ ORTHOGONAL MAPPING + LENGTH NORMALIZATION + MEAN CENTERING (best)
 ```
 
 If you want to work with your own dataset instead, you should follow the following steps:
+
 1. Normalize the source and target embeddings (`normalize_embeddings.py`). We recommend using length normalization followed by dimension-wise mean centering for best results.
 2. Project the source embeddings into the target embedding space (`project_embeddings.py`). We recommend using an orthogonal mapping for best results.
 3. Evaluate the projected embeddings (`eval_translation.py` for bilingual evaluation in word translation induction and `eval_analogy.py` for monolingual evaluation in analogy).
