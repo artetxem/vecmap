@@ -30,7 +30,7 @@ Usage
 If you want to reproduce the results reported in the paper, simply clone the repository and run the experiment script:
 
 ```
-git clone https://github.com/artetxem/mitzuli.git
+git clone https://github.com/artetxem/vecmap.git
 cd vecmap
 ./run_experiment.sh
 ```
