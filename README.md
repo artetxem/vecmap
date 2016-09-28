@@ -35,7 +35,7 @@ cd vecmap
 ./run_experiment.sh
 ```
 
-Take a coffee or two and, when you come back, you should see the following results, which correspond to Table 1 in the paper:
+The script will automatically download the appropriate English-Italian dataset, train different projections on it, and evaluate them on English-Italian word translation induction and English word analogy. Take a coffee or two and, when you come back, you should see the following results, which correspond to Table 1 in the paper:
 
 ```
 ORIGINAL EMBEDDINGS
@@ -62,7 +62,7 @@ ORTHOGONAL MAPPING + LENGTH NORMALIZATION + MEAN CENTERING (best)
   - EN AN  |  Coverage: 64.98%  Accuracy: 76.59% (sem: 79.63%, syn: 75.27%)
 ```
 
-If you want to work with your own dataset instead, you should follow the following steps:
+If you want to work with your own settings or dataset instead, you should follow the following steps:
 
 1. Normalize the source and target embeddings (`normalize_embeddings.py`). We recommend using length normalization followed by dimension-wise mean centering for best results.
 2. Project the source embeddings into the target embedding space (`project_embeddings.py`). We recommend using an orthogonal mapping for best results.
@@ -84,7 +84,7 @@ python3 eval_translation.py SRC_EMBEDDINGS.NORMALIZED.PROJECTED.TXT TRG_EMBEDDIN
 python3 eval_analogy.py -l SRC_EMBEDDINGS.NORMALIZED.PROJECTED.TXT -i TEST_ANALOGIES.TXT -t 30000
 ```
 
-For more details on each of the tools, please run them with the `--help` flag. We also recommend having a look at the experiment script to understand how to run the most standard variants as described in the paper.
+For more details on each of the tools, run them with the `--help` flag. We also recommend having a look at the experiment script to understand how to run the most standard variants as described in the paper.
 
 
 License
