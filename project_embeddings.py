@@ -1,4 +1,4 @@
-# Copyright (C) 2016  Mikel Artetxe <artetxem@gmail.com>
+# Copyright (C) 2016-2017  Mikel Artetxe <artetxem@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -50,10 +50,12 @@ def main():
     for line in f:
         src, trg = line.split()
         try:
-            src_indices.append(src_word2ind[src])
-            trg_indices.append(trg_word2ind[trg])
+            src_ind = src_word2ind[src]
+            trg_ind = trg_word2ind[trg]
+            src_indices.append(src_ind)
+            trg_indices.append(trg_ind)
         except KeyError:
-            print('OOV dictionary entry: {0} - {1}'.format(src, trg), file=sys.stderr)
+            print('WARNING: OOV dictionary entry ({0} - {1})'.format(src, trg), file=sys.stderr)
 
     # Learn the linear transformation minimizing the squared Euclidean distances (see paper)
     x = src_matrix[src_indices]
