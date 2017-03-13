@@ -1,4 +1,4 @@
-# Copyright (C) 2016  Mikel Artetxe <artetxem@gmail.com>
+# Copyright (C) 2016-2017  Mikel Artetxe <artetxem@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,6 +20,9 @@ import numpy as np
 import sys
 
 
+BATCH_SIZE = 1000
+
+
 def main():
     # Parse command line arguments
     parser = argparse.ArgumentParser(description='Evaluate embeddings in word analogy')
@@ -35,46 +38,64 @@ def main():
     f = open(args.embeddings, encoding=args.encoding, errors='surrogateescape')
     words, matrix = embeddings.read(f, threshold=args.threshold)
 
-    # Length normalize embeddings
-    matrix = embeddings.length_normalize(matrix)
-
     # Build word to index map
     word2ind = {word: i for i, word in enumerate(words)}
 
-    # Compute accuracy and coverage and print results
-    category = category_name = None
-    semantic = {'correct': 0, 'total': 0, 'oov': 0}
-    syntactic = {'correct': 0, 'total': 0, 'oov': 0}
+    # Length normalize embeddings
+    matrix = embeddings.length_normalize(matrix)
+
+    # Parse test file
     f = open(args.input, encoding=args.encoding, errors='surrogateescape')
+    categories = []
+    src1 = []
+    trg1 = []
+    src2 = []
+    trg2 = []
     for line in f:
         if line.startswith(': '):
-            if args.verbose and category is not None:
-                print('Coverage:{0:7.2%}  Accuracy:{1:7.2%} | {2}'.format(
-                    category['total'] / (category['total'] + category['oov']),
-                    category['correct'] / category['total'],
-                    category_name))
-            category_name = line[2:-1]
-            current = syntactic if category_name.startswith('gram') else semantic
-            category = {'correct': 0, 'total': 0, 'oov': 0}
+            name = line[2:-1]
+            is_syntactic = name.startswith('gram')
+            categories.append({'name': name, 'is_syntactic': is_syntactic, 'total': 0, 'oov': 0})
         else:
             try:
-                src1, trg1, src2, trg2 = [word2ind[word.lower() if args.lowercase else word] for word in line.split()]
-                similarities = np.dot(matrix, matrix[src2] - matrix[src1] + matrix[trg1])
-                similarities[[src1, trg1, src2]] = -1
-                closest = np.argmax(similarities)
-                if closest == trg2:
-                    category['correct'] += 1
-                    current['correct'] += 1
-                category['total'] += 1
-                current['total'] += 1
+                ind = [word2ind[word.lower() if args.lowercase else word] for word in line.split()]
+                src1.append(ind[0])
+                trg1.append(ind[1])
+                src2.append(ind[2])
+                trg2.append(ind[3])
+                categories[-1]['total'] += 1
             except KeyError:
-                category['oov'] += 1
-                current['oov'] += 1
+                categories[-1]['oov'] += 1
+    total = len(src1)
+
+    # Compute nearest neighbors using efficient matrix multiplication
+    nn = []
+    for i in range(0, total, BATCH_SIZE):
+        j = min(i + BATCH_SIZE, total)
+        similarities = (matrix[src2[i:j]] - matrix[src1[i:j]] + matrix[trg1[i:j]]).dot(matrix.T)
+        similarities[range(j-i), src1[i:j]] = -1
+        similarities[range(j-i), trg1[i:j]] = -1
+        similarities[range(j-i), src2[i:j]] = -1
+        nn += np.argmax(similarities, axis=1).tolist()
+    nn = np.array(nn)
+
+    # Compute and print accuracies
+    semantic = {'correct': 0, 'total': 0, 'oov': 0}
+    syntactic = {'correct': 0, 'total': 0, 'oov': 0}
+    ind = 0
+    for category in categories:
+        current = syntactic if category['is_syntactic'] else semantic
+        correct = np.sum(nn[ind:ind+category['total']] == trg2[ind:ind+category['total']])
+        current['correct'] += correct
+        current['total'] += category['total']
+        current['oov'] += category['oov']
+        ind += category['total']
+        if args.verbose:
+            print('Coverage:{0:7.2%}  Accuracy:{1:7.2%} | {2}'.format(
+                category['total'] / (category['total'] + category['oov']),
+                correct / category['total'],
+                category['name']))
     if args.verbose:
-        print('Coverage:{0:7.2%}  Accuracy:{1:7.2%} | {2}'.format(
-            category['total'] / (category['total'] + category['oov']),
-            category['correct'] / category['total'],
-            category_name))
         print('-'*80)
     print('Coverage:{0:7.2%}  Accuracy:{1:7.2%} (sem:{2:7.2%}, syn:{3:7.2%})'.format(
         (semantic['total'] + syntactic['total']) / (semantic['total'] + syntactic['total'] + semantic['oov'] + syntactic['oov']),
