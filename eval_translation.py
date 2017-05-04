@@ -1,4 +1,4 @@
-# Copyright (C) 2016  Mikel Artetxe <artetxem@gmail.com>
+# Copyright (C) 2016-2017  Mikel Artetxe <artetxem@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@ import argparse
 import collections
 import numpy as np
 import sys
+
+
+BATCH_SIZE = 1000
 
 
 def main():
@@ -63,11 +66,14 @@ def main():
 
     # Compute accuracy
     correct = 0
-    for src, trg in src2trg.items():
-        similarities = np.dot(trg_matrix, src_matrix[src])
-        closest = np.argmax(similarities)
-        if closest in trg:
-            correct += 1
+    src, trg = zip(*src2trg.items())
+    for i in range(0, len(src2trg), BATCH_SIZE):
+        j = min(i + BATCH_SIZE, len(src2trg))
+        similarities = src_matrix[list(src[i:j])].dot(trg_matrix.T)
+        nn = np.argmax(similarities, axis=1).tolist()
+        for k in range(j-i):
+            if nn[k] in trg[i+k]:
+                correct += 1
     print('Coverage:{0:7.2%}  Accuracy:{1:7.2%}'.format(coverage, correct / len(src2trg)))
 
 
