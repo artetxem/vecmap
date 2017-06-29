@@ -32,7 +32,7 @@ If you want to reproduce the results reported in the paper, simply clone the rep
 ```
 git clone https://github.com/artetxem/vecmap.git
 cd vecmap
-./run_experiment.sh
+./reproduce_emnlp2016.sh
 ```
 
 The script will automatically download the appropriate English-Italian dataset, train different mappings on it, and evaluate them on English-Italian word translation induction and English word analogy. Take a coffee or two and, when you come back, you should see the following results, which correspond to Table 1 in the paper:
