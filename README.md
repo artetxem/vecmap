@@ -5,7 +5,7 @@ This is an open source implementation of our framework to learn bilingual word e
 
 Mikel Artetxe, Gorka Labaka, and Eneko Agirre. 2016. **Learning principled bilingual mappings of word embeddings while preserving monolingual invariance**. In *Proceedings of the 2016 Conference on Empirical Methods in Natural Language Processing (EMNLP 2016)*.
 
-The package includes the tools necessary to project embeddings from one language into another as described in the paper, evaluation tools for word analogy and word translation induction, and a script to reproduce the results reported there.
+The package includes the tools necessary to map embeddings from one language into another as described in the paper, evaluation tools for word analogy and word translation induction, and a script to reproduce the results reported there.
 
 If you use this software for academic research, please cite the paper in question:
 ```
@@ -35,7 +35,7 @@ cd vecmap
 ./run_experiment.sh
 ```
 
-The script will automatically download the appropriate English-Italian dataset, train different projections on it, and evaluate them on English-Italian word translation induction and English word analogy. Take a coffee or two and, when you come back, you should see the following results, which correspond to Table 1 in the paper:
+The script will automatically download the appropriate English-Italian dataset, train different mappings on it, and evaluate them on English-Italian word translation induction and English word analogy. Take a coffee or two and, when you come back, you should see the following results, which correspond to Table 1 in the paper:
 
 ```
 ORIGINAL EMBEDDINGS
@@ -65,8 +65,8 @@ ORTHOGONAL MAPPING + LENGTH NORMALIZATION + MEAN CENTERING (best)
 If you want to work with your own settings or dataset instead, you should follow the following steps:
 
 1. Normalize the source and target embeddings (`normalize_embeddings.py`). We recommend using length normalization followed by dimension-wise mean centering for best results.
-2. Project the source embeddings into the target embedding space (`project_embeddings.py`). We recommend using an orthogonal mapping for best results.
-3. Evaluate the projected embeddings (`eval_translation.py` for bilingual evaluation in word translation induction and `eval_analogy.py` for monolingual evaluation in analogy).
+2. Map the source embeddings into the target embedding space (`map_embeddings.py`). We recommend using an orthogonal mapping for best results.
+3. Evaluate the mapped embeddings (`eval_translation.py` for bilingual evaluation in word translation induction and `eval_analogy.py` for monolingual evaluation in analogy).
 
 This can be done running the following commands:
 ```
@@ -74,14 +74,14 @@ This can be done running the following commands:
 python3 normalize_embeddings.py unit center -i SRC_EMBEDDINGS.TXT -o SRC_EMBEDDINGS.NORMALIZED.TXT
 python3 normalize_embeddings.py unit center -i TRG_EMBEDDINGS.TXT -o TRG_EMBEDDINGS.NORMALIZED.TXT
 
-# Project the source embeddings into the target embedding space
-python3 project_embeddings.py --orthogonal SRC_EMBEDDINGS.NORMALIZED.TXT TRG_EMBEDDINGS.NORMALIZED.TXT -d TRAIN_DICTIONARY.TXT -o SRC_EMBEDDINGS.NORMALIZED.PROJECTED.TXT
+# Map the source embeddings into the target embedding space
+python3 map_embeddings.py --orthogonal SRC_EMBEDDINGS.NORMALIZED.TXT TRG_EMBEDDINGS.NORMALIZED.TXT -d TRAIN_DICTIONARY.TXT -o SRC_EMBEDDINGS.NORMALIZED.MAPPED.TXT
 
-# Evaluate the projected embeddings in a bilingual word translation induction task
-python3 eval_translation.py SRC_EMBEDDINGS.NORMALIZED.PROJECTED.TXT TRG_EMBEDDINGS.NORMALIZED.TXT -d TEST_DICTIONARY.TXT
+# Evaluate the mapped embeddings in a bilingual word translation induction task
+python3 eval_translation.py SRC_EMBEDDINGS.NORMALIZED.MAPPED.TXT TRG_EMBEDDINGS.NORMALIZED.TXT -d TEST_DICTIONARY.TXT
 
-# Evaluate the projected embeddings in a monolingual analogy task
-python3 eval_analogy.py -l SRC_EMBEDDINGS.NORMALIZED.PROJECTED.TXT -i TEST_ANALOGIES.TXT -t 30000
+# Evaluate the mapped embeddings in a monolingual analogy task
+python3 eval_analogy.py -l SRC_EMBEDDINGS.NORMALIZED.MAPPED.TXT -i TEST_ANALOGIES.TXT -t 30000
 ```
 
 For more details on each of the tools, run them with the `--help` flag. We also recommend having a look at the experiment script to understand how to run the most standard variants as described in the paper.

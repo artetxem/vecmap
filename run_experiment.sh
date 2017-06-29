@@ -54,21 +54,21 @@ python3 eval_analogy.py -l $OUTPUT/original/src.emb.txt -i $TEST_ANALOGIES -t 30
 
 echo '--------------------------------------------------------------------------------'
 echo 'UNCONSTRAINED MAPPING (Mikolov et al., 2013)'
-python3 project_embeddings.py --unconstrained $OUTPUT/original/src.emb.txt $OUTPUT/original/trg.emb.txt -d $TRAIN_DICTIONARY -o $OUTPUT/original/src.mapped-unconstrained.emb.txt
+python3 map_embeddings.py --unconstrained $OUTPUT/original/src.emb.txt $OUTPUT/original/trg.emb.txt -d $TRAIN_DICTIONARY -o $OUTPUT/original/src.mapped-unconstrained.emb.txt
 echo -n '  - EN-IT  |  '
 python3 eval_translation.py $OUTPUT/original/src.mapped-unconstrained.emb.txt $OUTPUT/original/trg.emb.txt -d $TEST_DICTIONARY
 echo -n '  - EN AN  |  '
 python3 eval_analogy.py -l $OUTPUT/original/src.mapped-unconstrained.emb.txt -i $TEST_ANALOGIES -t 30000
 
 echo 'UNCONSTRAINED MAPPING + LENGTH NORMALIZATION'
-python3 project_embeddings.py --unconstrained $OUTPUT/unit/src.emb.txt $OUTPUT/unit/trg.emb.txt -d $TRAIN_DICTIONARY -o $OUTPUT/unit/src.mapped-unconstrained.emb.txt
+python3 map_embeddings.py --unconstrained $OUTPUT/unit/src.emb.txt $OUTPUT/unit/trg.emb.txt -d $TRAIN_DICTIONARY -o $OUTPUT/unit/src.mapped-unconstrained.emb.txt
 echo -n '  - EN-IT  |  '
 python3 eval_translation.py $OUTPUT/unit/src.mapped-unconstrained.emb.txt $OUTPUT/unit/trg.emb.txt -d $TEST_DICTIONARY
 echo -n '  - EN AN  |  '
 python3 eval_analogy.py -l $OUTPUT/unit/src.mapped-unconstrained.emb.txt -i $TEST_ANALOGIES -t 30000
 
 echo 'UNCONSTRAINED MAPPING + LENGTH NORMALIZATION + MEAN CENTERING'
-python3 project_embeddings.py --unconstrained $OUTPUT/unit-center/src.emb.txt $OUTPUT/unit-center/trg.emb.txt -d $TRAIN_DICTIONARY -o $OUTPUT/unit-center/src.mapped-unconstrained.emb.txt
+python3 map_embeddings.py --unconstrained $OUTPUT/unit-center/src.emb.txt $OUTPUT/unit-center/trg.emb.txt -d $TRAIN_DICTIONARY -o $OUTPUT/unit-center/src.mapped-unconstrained.emb.txt
 echo -n '  - EN-IT  |  '
 python3 eval_translation.py $OUTPUT/unit-center/src.mapped-unconstrained.emb.txt $OUTPUT/unit-center/trg.emb.txt -d $TEST_DICTIONARY
 echo -n '  - EN AN  |  '
@@ -76,21 +76,21 @@ python3 eval_analogy.py -l $OUTPUT/unit-center/src.mapped-unconstrained.emb.txt 
 
 echo '--------------------------------------------------------------------------------'
 echo 'ORTHOGONAL MAPPING'
-python3 project_embeddings.py --orthogonal $OUTPUT/original/src.emb.txt $OUTPUT/original/trg.emb.txt -d $TRAIN_DICTIONARY -o $OUTPUT/original/src.mapped-orthogonal.emb.txt
+python3 map_embeddings.py --orthogonal $OUTPUT/original/src.emb.txt $OUTPUT/original/trg.emb.txt -d $TRAIN_DICTIONARY -o $OUTPUT/original/src.mapped-orthogonal.emb.txt
 echo -n '  - EN-IT  |  '
 python3 eval_translation.py $OUTPUT/original/src.mapped-orthogonal.emb.txt $OUTPUT/original/trg.emb.txt -d $TEST_DICTIONARY
 echo -n '  - EN AN  |  '
 python3 eval_analogy.py -l $OUTPUT/original/src.mapped-orthogonal.emb.txt -i $TEST_ANALOGIES -t 30000
 
 echo 'ORTHOGONAL MAPPING + LENGTH NORMALIZATION (Xing et al., 2015)'
-python3 project_embeddings.py --orthogonal $OUTPUT/unit/src.emb.txt $OUTPUT/unit/trg.emb.txt -d $TRAIN_DICTIONARY -o $OUTPUT/unit/src.mapped-orthogonal.emb.txt
+python3 map_embeddings.py --orthogonal $OUTPUT/unit/src.emb.txt $OUTPUT/unit/trg.emb.txt -d $TRAIN_DICTIONARY -o $OUTPUT/unit/src.mapped-orthogonal.emb.txt
 echo -n '  - EN-IT  |  '
 python3 eval_translation.py $OUTPUT/unit/src.mapped-orthogonal.emb.txt $OUTPUT/unit/trg.emb.txt -d $TEST_DICTIONARY
 echo -n '  - EN AN  |  '
 python3 eval_analogy.py -l $OUTPUT/unit/src.mapped-orthogonal.emb.txt -i $TEST_ANALOGIES -t 30000
 
 echo 'ORTHOGONAL MAPPING + LENGTH NORMALIZATION + MEAN CENTERING (best)'
-python3 project_embeddings.py --orthogonal $OUTPUT/unit-center/src.emb.txt $OUTPUT/unit-center/trg.emb.txt -d $TRAIN_DICTIONARY -o $OUTPUT/unit-center/src.mapped-orthogonal.emb.txt
+python3 map_embeddings.py --orthogonal $OUTPUT/unit-center/src.emb.txt $OUTPUT/unit-center/trg.emb.txt -d $TRAIN_DICTIONARY -o $OUTPUT/unit-center/src.mapped-orthogonal.emb.txt
 echo -n '  - EN-IT  |  '
 python3 eval_translation.py $OUTPUT/unit-center/src.mapped-orthogonal.emb.txt $OUTPUT/unit-center/trg.emb.txt -d $TEST_DICTIONARY
 echo -n '  - EN AN  |  '
