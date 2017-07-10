@@ -1,4 +1,4 @@
-# Copyright (C) 2016  Mikel Artetxe <artetxem@gmail.com>
+# Copyright (C) 2016-2017  Mikel Artetxe <artetxem@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,10 +22,10 @@ import sys
 def main():
     # Parse command line arguments
     parser = argparse.ArgumentParser(description='Normalize word embeddings')
-    parser.add_argument('actions', choices=['none', 'unit', 'center', 'unitdim', 'centeremb'], nargs='+', help='the actions to perform in order')
+    parser.add_argument('actions', choices=['unit', 'center', 'unitdim', 'centeremb'], nargs='*', default=[], help='the actions to perform in order')
     parser.add_argument('-i', '--input', default=sys.stdin.fileno(), help='the input word embedding file (defaults to stdin)')
     parser.add_argument('-o', '--output', default=sys.stdout.fileno(), help='the output word embedding file (defaults to stdout)')
-    parser.add_argument('--encoding', default='utf-8', action='store_true', help='the character encoding for input/output (defaults to utf-8)')
+    parser.add_argument('--encoding', default='utf-8', help='the character encoding for input/output (defaults to utf-8)')
     args = parser.parse_args()
 
     # Read input embeddings

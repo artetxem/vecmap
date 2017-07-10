@@ -30,7 +30,8 @@ def main():
     parser.add_argument('src_embeddings', help='the source language embeddings')
     parser.add_argument('trg_embeddings', help='the target language embeddings')
     parser.add_argument('-d', '--dictionary', default=sys.stdin.fileno(), help='the test dictionary file (defaults to stdin)')
-    parser.add_argument('--encoding', default='utf-8', action='store_true', help='the character encoding for input/output (defaults to utf-8)')
+    parser.add_argument('--dot', action='store_true', help='use the dot product in the similarity computations instead of the cosine')
+    parser.add_argument('--encoding', default='utf-8', help='the character encoding for input/output (defaults to utf-8)')
     args = parser.parse_args()
 
     # Read input embeddings
@@ -40,8 +41,9 @@ def main():
     trg_words, trg_matrix = embeddings.read(trgfile)
 
     # Length normalize embeddings so their dot product effectively computes the cosine similarity
-    src_matrix = embeddings.length_normalize(src_matrix)
-    trg_matrix = embeddings.length_normalize(trg_matrix)
+    if not args.dot:
+        src_matrix = embeddings.length_normalize(src_matrix)
+        trg_matrix = embeddings.length_normalize(trg_matrix)
 
     # Build word to index map
     src_word2ind = {word: i for i, word in enumerate(src_words)}

@@ -31,7 +31,7 @@ def main():
     parser.add_argument('-i', '--input', default=sys.stdin.fileno(), help='the test file (defaults to stdin)')
     parser.add_argument('-v', '--verbose', action='store_true', help='verbose output (give category specific results)')
     parser.add_argument('-l', '--lowercase', action='store_true', help='lowercase the words in the test file')
-    parser.add_argument('--encoding', default='utf-8', action='store_true', help='the character encoding for input/output (defaults to utf-8)')
+    parser.add_argument('--encoding', default='utf-8', help='the character encoding for input/output (defaults to utf-8)')
     args = parser.parse_args()
 
     # Read input embeddings
