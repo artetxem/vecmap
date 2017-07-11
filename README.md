@@ -59,7 +59,7 @@ If you have no dictionary at all, you can use shared numerals instead as follows
 ```
 python3 map_embeddings.py --orthogonal SRC_EMBEDDINGS.NORMALIZED.TXT TRG_EMBEDDINGS.NORMALIZED.TXT SRC_EMBEDDINGS.MAPPED.TXT TRG_EMBEDDINGS.MAPPED.TXT --numerals --self-learning -v
 ```
-3. Evaluate the mapped embeddings. You can use `eval_translation.py` for evaluation in word translation induction, `eval_analogy.py` for evaluation in word analogy and `eval_similarity` for evaluation in word similarity/relatedness as follows:
+3. Evaluate the mapped embeddings. You can use `eval_translation.py` for evaluation in word translation induction, `eval_analogy.py` for evaluation in word analogy and `eval_similarity.py` for evaluation in word similarity/relatedness as follows:
 ```
 python3 eval_translation.py SRC_EMBEDDINGS.MAPPED.TXT TRG_EMBEDDINGS.MAPPED.TXT -d TEST_DICTIONARY.TXT
 python3 eval_analogy.py -l SRC_EMBEDDINGS.MAPPED.TXT -i TEST_ANALOGIES.TXT -t 30000
@@ -111,7 +111,7 @@ ORTHOGONAL MAPPING + LENGTH NORMALIZATION + MEAN CENTERING (best)
   - EN AN  |  Coverage: 64.98%  Accuracy: 76.59% (sem: 79.63%, syn: 75.27%)
 ```
 
-The ACL 2017 script runs in about 4 days in our modest cluster and produces the following output, which corresponds to Table 1 and 2 in the paper (note that you might see some minor differences for the 25 word seed dictionary due to the non-determinism when the dictionary size is smaller than the dimensionality of the embeddings):
+The ACL 2017 script runs in about 4 days in our small cluster and produces the following output, which corresponds to Table 1 and 2 in the paper (note that you might see some minor differences for the 25 word seed dictionary due to the underdetermined mapping when the dictionary size is smaller than the dimensionality of the embeddings):
 
 ```
 --------------------------------------------------------------------------------
