@@ -3,7 +3,7 @@ VecMap (bilingual word embedding mappings)
 
 This is an open source implementation of our framework to learn bilingual word embedding mappings, described in the following papers:
 - Mikel Artetxe, Gorka Labaka, and Eneko Agirre. 2016. **[Learning principled bilingual mappings of word embeddings while preserving monolingual invariance](https://aclweb.org/anthology/D16-1250)**. In *Proceedings of the 2016 Conference on Empirical Methods in Natural Language Processing*, pages 2289-2294.
-- Mikel Artetxe, Gorka Labaka, and Eneko Agirre. 2017. **Learning bilingual word embeddings with (almost) no bilingual data**. In *Proceedings of the 55th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)*.
+- Mikel Artetxe, Gorka Labaka, and Eneko Agirre. 2017. **[Learning bilingual word embeddings with (almost) no bilingual data](http://aclweb.org/anthology/P17-1042)**. In *Proceedings of the 55th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)*, pages 451-462.
 
 The first paper describes the general framework, whereas the second introduces a self-learning extension that enables training under very weak bilingual supervision (as little as a 25 word dictionary or an automatically generated list of numerals) with comparable results.
 
@@ -16,14 +16,15 @@ If you use this software for academic research, please cite the relevant paper(s
   title     = {Learning principled bilingual mappings of word embeddings while preserving monolingual invariance},
   booktitle = {Proceedings of the 2016 Conference on Empirical Methods in Natural Language Processing},
   year      = {2016},
-  pages     = {2289--2294},
+  pages     = {2289--2294}
 }
 
 @inproceedings{artetxe2017learning,
   author    = {Artetxe, Mikel  and  Labaka, Gorka  and  Agirre, Eneko},
   title     = {Learning bilingual word embeddings with (almost) no bilingual data},
   booktitle = {Proceedings of the 55th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)},
-  year      = {2017}
+  year      = {2017},
+  pages     = {451--462}
 }
 ```
 
