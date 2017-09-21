@@ -54,11 +54,11 @@ python3 map_embeddings.py --orthogonal SRC_EMBEDDINGS.NORMALIZED.TXT TRG_EMBEDDI
 ```
 If your seed dictionary is small, you should enable the self-learning extension as follows (note that this might take a few hours):
 ```
-python3 map_embeddings.py --orthogonal SRC_EMBEDDINGS.NORMALIZED.TXT TRG_EMBEDDINGS.NORMALIZED.TXT SRC_EMBEDDINGS.MAPPED.TXT TRG_EMBEDDINGS.MAPPED.TXT -d TRAIN_DICTIONARY.TXT --self-learning -v
+python3 map_embeddings.py --orthogonal SRC_EMBEDDINGS.NORMALIZED.TXT TRG_EMBEDDINGS.NORMALIZED.TXT SRC_EMBEDDINGS.MAPPED.TXT TRG_EMBEDDINGS.MAPPED.TXT -d TRAIN_DICTIONARY.TXT --self_learning -v
 ```
 If you have no dictionary at all, you can use shared numerals instead as follows:
 ```
-python3 map_embeddings.py --orthogonal SRC_EMBEDDINGS.NORMALIZED.TXT TRG_EMBEDDINGS.NORMALIZED.TXT SRC_EMBEDDINGS.MAPPED.TXT TRG_EMBEDDINGS.MAPPED.TXT --numerals --self-learning -v
+python3 map_embeddings.py --orthogonal SRC_EMBEDDINGS.NORMALIZED.TXT TRG_EMBEDDINGS.NORMALIZED.TXT SRC_EMBEDDINGS.MAPPED.TXT TRG_EMBEDDINGS.MAPPED.TXT --numerals --self_learning -v
 ```
 3. Evaluate the mapped embeddings. You can use `eval_translation.py` for evaluation in word translation induction, `eval_analogy.py` for evaluation in word analogy and `eval_similarity.py` for evaluation in word similarity/relatedness as follows:
 ```
