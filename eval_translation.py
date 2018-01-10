@@ -1,4 +1,4 @@
-# Copyright (C) 2016-2017  Mikel Artetxe <artetxem@gmail.com>
+# Copyright (C) 2016-2018  Mikel Artetxe <artetxem@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,13 +32,22 @@ def main():
     parser.add_argument('-d', '--dictionary', default=sys.stdin.fileno(), help='the test dictionary file (defaults to stdin)')
     parser.add_argument('--dot', action='store_true', help='use the dot product in the similarity computations instead of the cosine')
     parser.add_argument('--encoding', default='utf-8', help='the character encoding for input/output (defaults to utf-8)')
+    parser.add_argument('--precision', choices=['fp16', 'fp32', 'fp64'], default='fp64', help='the floating-point precision (defaults to fp64)')
     args = parser.parse_args()
+
+    # Choose the right dtype for the desired precision
+    if args.precision == 'fp16':
+        dtype = 'float16'
+    elif args.precision == 'fp32':
+        dtype = 'float32'
+    elif args.precision == 'fp64':
+        dtype = 'float64'
 
     # Read input embeddings
     srcfile = open(args.src_embeddings, encoding=args.encoding, errors='surrogateescape')
     trgfile = open(args.trg_embeddings, encoding=args.encoding, errors='surrogateescape')
-    src_words, src_matrix = embeddings.read(srcfile)
-    trg_words, trg_matrix = embeddings.read(trgfile)
+    src_words, src_matrix = embeddings.read(srcfile, dtype=dtype)
+    trg_words, trg_matrix = embeddings.read(trgfile, dtype=dtype)
 
     # Length normalize embeddings so their dot product effectively computes the cosine similarity
     if not args.dot:

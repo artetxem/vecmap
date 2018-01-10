@@ -1,4 +1,4 @@
-# Copyright (C) 2017  Mikel Artetxe <artetxem@gmail.com>
+# Copyright (C) 2017-2018  Mikel Artetxe <artetxem@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,10 +31,19 @@ def main():
     parser.add_argument('-l', '--lowercase', action='store_true', help='lowercase the words in the test files')
     parser.add_argument('--backoff', default=None, type=float, help='use a backoff similarity score for OOV entries')
     parser.add_argument('--encoding', default='utf-8', help='the character encoding for input/output (defaults to utf-8)')
+    parser.add_argument('--precision', choices=['fp16', 'fp32', 'fp64'], default='fp64', help='the floating-point precision (defaults to fp64)')
     parser.add_argument('--sim', nargs='*', help='the names of the datasets to include in the similarity results')
     parser.add_argument('--rel', nargs='*', help='the names of the datasets to include in the relatedness results')
     parser.add_argument('--all', nargs='*', help='the names of the datasets to include in the total results')
     args = parser.parse_args()
+
+    # Choose the right dtype for the desired precision
+    if args.precision == 'fp16':
+        dtype = 'float16'
+    elif args.precision == 'fp32':
+        dtype = 'float32'
+    elif args.precision == 'fp64':
+        dtype = 'float64'
 
     # Parse test files
     word_pairs = []
@@ -57,8 +66,8 @@ def main():
     # Read embeddings
     srcfile = open(args.src_embeddings, encoding=args.encoding, errors='surrogateescape')
     trgfile = open(args.src_embeddings if args.trg_embeddings is None else args.trg_embeddings, encoding=args.encoding, errors='surrogateescape')
-    src_words, src_matrix = embeddings.read(srcfile, vocabulary=src_vocab)
-    trg_words, trg_matrix = embeddings.read(trgfile, vocabulary=trg_vocab)
+    src_words, src_matrix = embeddings.read(srcfile, vocabulary=src_vocab, dtype=dtype)
+    trg_words, trg_matrix = embeddings.read(trgfile, vocabulary=trg_vocab, dtype=dtype)
 
     # Length normalize embeddings so their dot product effectively computes the cosine similarity
     src_matrix = embeddings.length_normalize(src_matrix)

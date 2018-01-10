@@ -1,4 +1,4 @@
-# Copyright (C) 2016-2017  Mikel Artetxe <artetxem@gmail.com>
+# Copyright (C) 2016-2018  Mikel Artetxe <artetxem@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -37,6 +37,7 @@ def main():
     parser.add_argument('src_output', help='the output source embeddings')
     parser.add_argument('trg_output', help='the output target embeddings')
     parser.add_argument('--encoding', default='utf-8', help='the character encoding for input/output (defaults to utf-8)')
+    parser.add_argument('--precision', choices=['fp16', 'fp32', 'fp64'], default='fp64', help='the floating-point precision (defaults to fp64)')
     mapping_group = parser.add_argument_group('mapping arguments', 'Basic embedding mapping arguments (EMNLP 2016)')
     mapping_group.add_argument('-d', '--dictionary', default=sys.stdin.fileno(), help='the training dictionary file (defaults to stdin)')
     mapping_group.add_argument('--normalize', choices=['unit', 'center', 'unitdim', 'centeremb'], nargs='*', default=[], help='the normalization actions to perform in order')
@@ -53,11 +54,19 @@ def main():
     self_learning_group.add_argument('-v', '--verbose', action='store_true', help='write log information to stderr at each iteration')
     args = parser.parse_args()
 
+    # Choose the right dtype for the desired precision
+    if args.precision == 'fp16':
+        dtype = 'float16'
+    elif args.precision == 'fp32':
+        dtype = 'float32'
+    elif args.precision == 'fp64':
+        dtype = 'float64'
+
     # Read input embeddings
     srcfile = open(args.src_input, encoding=args.encoding, errors='surrogateescape')
     trgfile = open(args.trg_input, encoding=args.encoding, errors='surrogateescape')
-    src_words, x = embeddings.read(srcfile)
-    trg_words, z = embeddings.read(trgfile)
+    src_words, x = embeddings.read(srcfile, dtype=dtype)
+    trg_words, z = embeddings.read(trgfile, dtype=dtype)
 
     # Build word to index map
     src_word2ind = {word: i for i, word in enumerate(src_words)}
@@ -102,7 +111,6 @@ def main():
                 validation[src_ind].add(trg_ind)
                 vocab.add(src)
             except KeyError:
-                pass
                 oov.add(src)
         oov -= vocab  # If one of the translation options is in the vocabulary, then the entry is not an oov
         validation_coverage = len(validation) / (len(validation) + len(oov))
@@ -145,10 +153,10 @@ def main():
         if args.self_learning:
 
             # Update the training dictionary
-            best_sim_forward = np.full(x.shape[0], -100.)
+            best_sim_forward = np.full(x.shape[0], -100, dtype=dtype)
             src_indices_forward = range(x.shape[0])
             trg_indices_forward = np.zeros(x.shape[0], dtype=int)
-            best_sim_backward = np.full(z.shape[0], -100.)
+            best_sim_backward = np.full(z.shape[0], -100, dtype=dtype)
             src_indices_backward = np.zeros(z.shape[0], dtype=int)
             trg_indices_backward = range(z.shape[0])
             for i in range(0, x.shape[0], MAX_DIM_X):
