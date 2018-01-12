@@ -13,6 +13,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from cupy_utils import *
+
 import numpy as np
 
 
@@ -34,28 +36,33 @@ def read(file, threshold=0, vocabulary=None, dtype='float'):
 
 
 def write(words, matrix, file):
-    print('%d %d' % matrix.shape, file=file)
+    m = asnumpy(matrix)
+    print('%d %d' % m.shape, file=file)
     for i in range(len(words)):
-        print(words[i] + ' ' + ' '.join(['%.6g' % x for x in matrix[i]]), file=file)
+        print(words[i] + ' ' + ' '.join(['%.6g' % x for x in m[i]]), file=file)
 
 
 def length_normalize(matrix):
-    norms = np.sqrt(np.sum(matrix**2, axis=1))
+    xp = get_array_module(matrix)
+    norms = xp.sqrt(xp.sum(matrix**2, axis=1))
     norms[norms == 0] = 1
-    return matrix / norms[:, np.newaxis]
+    return matrix / norms[:, xp.newaxis]
 
 
 def mean_center(matrix):
-    avg = np.mean(matrix, axis=0)
+    xp = get_array_module(matrix)
+    avg = xp.mean(matrix, axis=0)
     return matrix - avg
 
 
 def length_normalize_dimensionwise(matrix):
-    norms = np.sqrt(np.sum(matrix**2, axis=0))
+    xp = get_array_module(matrix)
+    norms = xp.sqrt(xp.sum(matrix**2, axis=0))
     norms[norms == 0] = 1
     return matrix / norms
 
 
 def mean_center_embeddingwise(matrix):
-    avg = np.mean(matrix, axis=1)
-    return matrix - avg[:, np.newaxis]
+    xp = get_array_module(matrix)
+    avg = xp.mean(matrix, axis=1)
+    return matrix - avg[:, xp.newaxis]

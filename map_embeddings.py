@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import embeddings
+from cupy_utils import *
 
 import argparse
 import collections
@@ -38,6 +39,7 @@ def main():
     parser.add_argument('trg_output', help='the output target embeddings')
     parser.add_argument('--encoding', default='utf-8', help='the character encoding for input/output (defaults to utf-8)')
     parser.add_argument('--precision', choices=['fp16', 'fp32', 'fp64'], default='fp64', help='the floating-point precision (defaults to fp64)')
+    parser.add_argument('--cuda', action='store_true', help='use cuda (requires cupy)')
     mapping_group = parser.add_argument_group('mapping arguments', 'Basic embedding mapping arguments (EMNLP 2016)')
     mapping_group.add_argument('-d', '--dictionary', default=sys.stdin.fileno(), help='the training dictionary file (defaults to stdin)')
     mapping_group.add_argument('--normalize', choices=['unit', 'center', 'unitdim', 'centeremb'], nargs='*', default=[], help='the normalization actions to perform in order')
@@ -67,6 +69,17 @@ def main():
     trgfile = open(args.trg_input, encoding=args.encoding, errors='surrogateescape')
     src_words, x = embeddings.read(srcfile, dtype=dtype)
     trg_words, z = embeddings.read(trgfile, dtype=dtype)
+
+    # NumPy/CuPy management
+    if args.cuda:
+        if not supports_cupy():
+            print('ERROR: Install CuPy for CUDA support', file=sys.stderr)
+            sys.exit(-1)
+        xp = get_cupy()
+        x = xp.asarray(x)
+        z = xp.asarray(z)
+    else:
+        xp = np
 
     # Build word to index map
     src_word2ind = {word: i for i, word in enumerate(src_words)}
@@ -142,38 +155,42 @@ def main():
 
         # Update the embedding mapping
         if args.orthogonal:  # orthogonal mapping
-            u, s, vt = np.linalg.svd(np.dot(z[trg_indices].T, x[src_indices]))
-            w = np.dot(vt.T, u.T)
+            u, s, vt = xp.linalg.svd(z[trg_indices].T.dot(x[src_indices]))
+            w = vt.T.dot(u.T)
         else:  # unconstrained mapping
-            x_pseudoinv = np.dot(np.linalg.inv(np.dot(x[src_indices].T, x[src_indices])), x[src_indices].T)
-            w = np.dot(x_pseudoinv, z[trg_indices])
+            x_pseudoinv = xp.linalg.inv(x[src_indices].T.dot(x[src_indices])).dot(x[src_indices].T)
+            w = x_pseudoinv.dot(z[trg_indices])
         xw = x.dot(w)
 
         # Self-learning
         if args.self_learning:
 
             # Update the training dictionary
-            best_sim_forward = np.full(x.shape[0], -100, dtype=dtype)
-            src_indices_forward = range(x.shape[0])
-            trg_indices_forward = np.zeros(x.shape[0], dtype=int)
-            best_sim_backward = np.full(z.shape[0], -100, dtype=dtype)
-            src_indices_backward = np.zeros(z.shape[0], dtype=int)
-            trg_indices_backward = range(z.shape[0])
+            best_sim_forward = xp.full(x.shape[0], -100, dtype=dtype)
+            src_indices_forward = xp.arange(x.shape[0])
+            trg_indices_forward = xp.zeros(x.shape[0], dtype=int)
+            best_sim_backward = xp.full(z.shape[0], -100, dtype=dtype)
+            src_indices_backward = xp.zeros(z.shape[0], dtype=int)
+            trg_indices_backward = xp.arange(z.shape[0])
             for i in range(0, x.shape[0], MAX_DIM_X):
-                for j in range(0, z.shape[0], MAX_DIM_Z):
-                    sim = xw[i:i+MAX_DIM_X].dot(z[j:j+MAX_DIM_Z].T)
-                    for k in range(sim.shape[0]):
-                        l = sim[k].argmax()
-                        if sim[k, l] > best_sim_forward[i+k]:
-                            best_sim_forward[i+k] = sim[k, l]
-                            trg_indices_forward[i+k] = j + l
-                    if args.direction in ('backward', 'union'):  # Slow, only do if necessary
-                        for l in range(sim.shape[1]):
-                            k = sim[:, l].argmax()
-                            if sim[k, l] > best_sim_backward[j+l]:
-                                best_sim_backward[j+l] = sim[k, l]
-                                src_indices_backward[j+l] = i + k
-                    sim = None
+                j = min(x.shape[0], i + MAX_DIM_X)
+                for k in range(0, z.shape[0], MAX_DIM_Z):
+                    l = min(z.shape[0], k + MAX_DIM_Z)
+                    sim = xw[i:j].dot(z[k:l].T)
+                    if args.direction in ('forward', 'union'):
+                        ind = sim.argmax(axis=1)
+                        val = sim[xp.arange(sim.shape[0]), ind]
+                        ind += k
+                        mask = (val > best_sim_forward[i:j])
+                        best_sim_forward[i:j][mask] = val[mask]
+                        trg_indices_forward[i:j][mask] = ind[mask]
+                    if args.direction in ('backward', 'union'):
+                        ind = sim.argmax(axis=0)
+                        val = sim[ind, xp.arange(sim.shape[1])]
+                        ind += i
+                        mask = (val > best_sim_backward[k:l])
+                        best_sim_backward[k:l][mask] = val[mask]
+                        src_indices_backward[k:l][mask] = ind[mask]
             if args.direction == 'forward':
                 src_indices = src_indices_forward
                 trg_indices = trg_indices_forward
@@ -181,22 +198,25 @@ def main():
                 src_indices = src_indices_backward
                 trg_indices = trg_indices_backward
             elif args.direction == 'union':
-                src_indices = np.concatenate((src_indices_forward, src_indices_backward))
-                trg_indices = np.concatenate((trg_indices_forward, trg_indices_backward))
+                src_indices = xp.concatenate((src_indices_forward, src_indices_backward))
+                trg_indices = xp.concatenate((trg_indices_forward, trg_indices_backward))
 
             # Objective function evaluation
             prev_objective = objective
             if args.direction == 'forward':
-                objective = np.mean(best_sim_forward)
+                objective = xp.mean(best_sim_forward).tolist()
             elif args.direction == 'backward':
-                objective = np.mean(best_sim_backward)
+                objective = xp.mean(best_sim_backward).tolist()
             elif args.direction == 'union':
-                objective = (np.mean(best_sim_forward) + np.mean(best_sim_backward)) / 2
+                objective = (xp.mean(best_sim_forward) + xp.mean(best_sim_backward)).tolist() / 2
 
             # Accuracy and similarity evaluation in validation
             if args.validation is not None:
-                accuracy = np.mean([1 if trg_indices_forward[src] in trg else 0 for src, trg in validation.items()])
-                similarity = np.mean([np.max(z[list(trg)].dot(xw[src])) for src, trg in validation.items()])
+                src = list(validation.keys())
+                sim = xw[src].dot(z.T)  # TODO Assuming that it fits in memory
+                nn = asnumpy(sim.argmax(axis=1))
+                accuracy = np.mean([1 if nn[i] in validation[src[i]] else 0 for i in range(len(src))])
+                similarity = np.mean([max([sim[i, j].tolist() for j in validation[src[i]]]) for i in range(len(src))])
 
             # Logging
             duration = time.time() - t

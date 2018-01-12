@@ -34,6 +34,7 @@ Requirements
 - Python 3
 - NumPy
 - SciPy
+- CuPy (optional, only required for CUDA support)
 
 If you are having performance issues, make sure that your NumPy installation is properly linked to BLAS/LAPACK.
 
