@@ -2,21 +2,21 @@ VecMap (bilingual word embedding mappings)
 ==============
 
 This is an open source implementation of our framework to learn bilingual word embedding mappings, described in the following papers:
+- Mikel Artetxe, Gorka Labaka, and Eneko Agirre. 2018. **Generalizing and improving bilingual word embedding mappings with a multi-step framework of linear transformations**. In *Proceedings of the Thirty-Second AAAI Conference on Artificial Intelligence (AAAI-18)*.
+- Mikel Artetxe, Gorka Labaka, and Eneko Agirre. 2017. **[Learning bilingual word embeddings with (almost) no bilingual data](https://aclweb.org/anthology/P17-1042)**. In *Proceedings of the 55th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)*, pages 451-462.
 - Mikel Artetxe, Gorka Labaka, and Eneko Agirre. 2016. **[Learning principled bilingual mappings of word embeddings while preserving monolingual invariance](https://aclweb.org/anthology/D16-1250)**. In *Proceedings of the 2016 Conference on Empirical Methods in Natural Language Processing*, pages 2289-2294.
-- Mikel Artetxe, Gorka Labaka, and Eneko Agirre. 2017. **[Learning bilingual word embeddings with (almost) no bilingual data](http://aclweb.org/anthology/P17-1042)**. In *Proceedings of the 55th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)*, pages 451-462.
 
-The first paper describes the general framework, whereas the second introduces a self-learning extension that enables training under very weak bilingual supervision (as little as a 25 word dictionary or an automatically generated list of numerals) with comparable results.
+The first and third papers describe the general framework, whereas the second introduces a self-learning extension that enables training under very weak bilingual supervision (as little as a 25 word dictionary or an automatically generated list of numerals) with comparable results.
 
-The package includes the tools necessary to map embeddings from one language into another as described in both papers, evaluation tools for word translation induction, word analogy and word similarity/relatedness, and scripts to reproduce the results reported there.
+The package includes the tools necessary to map embeddings from one language into another as described in the papers, evaluation tools for word translation induction, word analogy and word similarity/relatedness, and scripts to reproduce the results reported there.
 
 If you use this software for academic research, please cite the relevant paper(s):
 ```
-@inproceedings{artetxe2016learning,
+@inproceedings{artetxe2018generalizing,
   author    = {Artetxe, Mikel  and  Labaka, Gorka  and  Agirre, Eneko},
-  title     = {Learning principled bilingual mappings of word embeddings while preserving monolingual invariance},
-  booktitle = {Proceedings of the 2016 Conference on Empirical Methods in Natural Language Processing},
-  year      = {2016},
-  pages     = {2289--2294}
+  title     = {Generalizing and improving bilingual word embedding mappings with a multi-step framework of linear transformations},
+  booktitle = {Proceedings of the Thirty-Second AAAI Conference on Artificial Intelligence (AAAI-18)},
+  year      = {2018}
 }
 
 @inproceedings{artetxe2017learning,
@@ -25,6 +25,14 @@ If you use this software for academic research, please cite the relevant paper(s
   booktitle = {Proceedings of the 55th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)},
   year      = {2017},
   pages     = {451--462}
+}
+
+@inproceedings{artetxe2016learning,
+  author    = {Artetxe, Mikel  and  Labaka, Gorka  and  Agirre, Eneko},
+  title     = {Learning principled bilingual mappings of word embeddings while preserving monolingual invariance},
+  booktitle = {Proceedings of the 2016 Conference on Empirical Methods in Natural Language Processing},
+  year      = {2016},
+  pages     = {2289--2294}
 }
 ```
 
@@ -49,11 +57,11 @@ Using the package typically involves the following 3 steps:
 python3 normalize_embeddings.py unit center -i SRC_EMBEDDINGS.TXT -o SRC_EMBEDDINGS.NORMALIZED.TXT
 python3 normalize_embeddings.py unit center -i TRG_EMBEDDINGS.TXT -o TRG_EMBEDDINGS.NORMALIZED.TXT
 ```
-2. Map the source embeddings into the target embedding space (`map_embeddings.py`). We recommend using an orthogonal mapping (`--orthogonal`) for best results as follows:
+2. Map the source embeddings into the target embedding space (`map_embeddings.py`). We recommend using the following settings for best results:
 ```
-python3 map_embeddings.py --orthogonal SRC_EMBEDDINGS.NORMALIZED.TXT TRG_EMBEDDINGS.NORMALIZED.TXT SRC_EMBEDDINGS.MAPPED.TXT TRG_EMBEDDINGS.MAPPED.TXT -d TRAIN_DICTIONARY.TXT
+python3 map_embeddings.py --whiten --src_dewhiten src --trg_dewhiten trg --trg_reweight SRC_EMBEDDINGS.NORMALIZED.TXT TRG_EMBEDDINGS.NORMALIZED.TXT SRC_EMBEDDINGS.MAPPED.TXT TRG_EMBEDDINGS.MAPPED.TXT -d TRAIN_DICTIONARY.TXT
 ```
-If your seed dictionary is small, you should enable the self-learning extension as follows (note that this might take a few hours):
+If your seed dictionary is small, you should use an orthogonal mapping with the self-learning extension as follows (note that this might take a few hours):
 ```
 python3 map_embeddings.py --orthogonal SRC_EMBEDDINGS.NORMALIZED.TXT TRG_EMBEDDINGS.NORMALIZED.TXT SRC_EMBEDDINGS.MAPPED.TXT TRG_EMBEDDINGS.MAPPED.TXT -d TRAIN_DICTIONARY.TXT --self_learning -v
 ```
@@ -82,9 +90,10 @@ cd vecmap
 ./get_data.sh
 ./reproduce_emnlp2016.sh
 ./reproduce_acl2017.sh
+./reproduce_aaai2018.sh
 ```
 
-Note that the scripts save copies of all embeddings they produce, so you will need around 70GB of disk space in order to run all experiments.
+Note that the EMNLP and ACL scripts save copies of all embeddings they produce, so you will need around 70GB of disk space in order to run all experiments.
 
 The EMNLP 2016 script runs in a few minutes and produces the following output, which corresponds to Table 1 in the paper:
 
@@ -183,10 +192,78 @@ NUMERAL DICTIONARY
   - Proposed method         |  Translation: 26.47%
 ```
 
+The AAAI 2018 script runs in about a day in our small cluster and produces the following output (alternatively, the script can be run in a few hours in a GPU by setting the `AAAI2018_SETTINGS` environment variable to `'--precision fp32 --cuda'`):
+
+```
+--------------------------------------------------------------------------
+                                 TABLE 2                                  
+--------------------------------------------------------------------------
+ Motivation   S1   S4 (src)   S4 (trg)   EN-IT    EN-DE    EN-FI    EN-ES 
+--------------------------------------------------------------------------
+   Orth.                                 39.27%   41.87%   30.62%   31.40%
+--------------------------------------------------------------------------
+    CCA       x                          32.27%   33.00%   22.05%   23.73%
+--------------------------------------------------------------------------
+    OLS       x      src        src      37.33%   38.47%   25.35%   28.87%
+    OLS       x      trg        trg      38.00%   36.60%   26.33%   28.80%
+--------------------------------------------------------------------------
+    New       x      src        trg      39.47%   41.93%   29.71%   31.67%
+--------------------------------------------------------------------------
+
+------------------------------------------------------
+                       TABLE 3                        
+------------------------------------------------------
+  Motivation   S3    EN-IT    EN-DE    EN-FI    EN-ES 
+------------------------------------------------------
+ Orth. / CCA         39.47%   41.93%   29.71%   31.67%
+------------------------------------------------------
+    OLS        src   38.53%   41.73%   28.65%   30.47%
+    OLS        trg   43.80%   44.27%   32.79%   36.47%
+------------------------------------------------------
+
+---------------------------------------------
+                   TABLE 4                   
+---------------------------------------------
+ S3    S5   EN-IT    EN-DE    EN-FI    EN-ES 
+---------------------------------------------
+            39.47%   41.93%   29.71%   31.67%
+       x    42.53%   44.53%   32.09%   33.80%
+---------------------------------------------
+ trg        43.80%   44.27%   32.79%   36.47%
+ trg   x    44.00%   44.27%   32.94%   36.53%
+---------------------------------------------
+
+--------------------------------------------------------------
+                           TABLE 5                            
+--------------------------------------------------------------
+     Retrieval method        EN-IT    EN-DE    EN-FI    EN-ES 
+--------------------------------------------------------------
+     Nearest neighbor        44.00%   44.27%   32.94%   36.53%
+ Inverted nearest neighbor   43.07%   42.20%   31.18%   32.53%
+     Inverted softmax        45.27%   44.13%   32.94%   36.60%
+--------------------------------------------------------------
+
+-----------------------------------------------------------------------
+                                TABLE 6                                
+-----------------------------------------------------------------------
+                                      EN-IT    EN-DE    EN-FI    EN-ES 
+-----------------------------------------------------------------------
+ Mikolov, Le, and Sutskever (2013)    34.93%   35.00%   25.91%   27.73%
+ Shigeto et al. (2015)                41.53%   43.07%   31.04%   33.73%
+ Xing et al. (2015)                   36.87%   41.27%   28.23%   31.20%
+ Zhang et al. (2016)                  36.73%   40.80%   28.16%   31.07%
+ Artetxe, Labaka, and Agirre (2016)   39.27%   41.87%   30.62%   31.40%
+ Smith et al. (2017)                  44.53%   43.33%   29.42%   35.13%
+-----------------------------------------------------------------------
+ Proposed (nearest neighbor)          44.00%   44.27%   32.94%   36.53%
+ Proposed (inverted softmax)          45.27%   44.13%   32.94%   36.60%
+-----------------------------------------------------------------------
+```
+
 
 License
 -------
 
-Copyright (C) 2016-2017, Mikel Artetxe
+Copyright (C) 2016-2018, Mikel Artetxe
 
 Licensed under the terms of the GNU General Public License, either version 3 or (at your option) any later version. A full copy of the license can be found in LICENSE.txt.

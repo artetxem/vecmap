@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import embeddings
+from cupy_utils import *
 
 import argparse
 import collections
@@ -21,7 +22,7 @@ import numpy as np
 import sys
 
 
-BATCH_SIZE = 1000
+BATCH_SIZE = 500
 
 
 def main():
@@ -30,9 +31,14 @@ def main():
     parser.add_argument('src_embeddings', help='the source language embeddings')
     parser.add_argument('trg_embeddings', help='the target language embeddings')
     parser.add_argument('-d', '--dictionary', default=sys.stdin.fileno(), help='the test dictionary file (defaults to stdin)')
+    parser.add_argument('--retrieval', default='nn', choices=['nn', 'invnn', 'invsoftmax'], help='the retrieval method (nn: standard nearest neighbor; invnn: inverted nearest neighbor; invsoftmax: inverted softmax)')
+    parser.add_argument('--inv_temperature', default=1, type=float, help='the inverse temperature (only compatible with inverted softmax)')
+    parser.add_argument('--inv_sample', default=None, type=int, help='use a random subset of the source vocabulary for the inverse computations (only compatible with inverted softmax)')
     parser.add_argument('--dot', action='store_true', help='use the dot product in the similarity computations instead of the cosine')
     parser.add_argument('--encoding', default='utf-8', help='the character encoding for input/output (defaults to utf-8)')
+    parser.add_argument('--seed', type=int, default=0, help='the random seed')
     parser.add_argument('--precision', choices=['fp16', 'fp32', 'fp64'], default='fp64', help='the floating-point precision (defaults to fp64)')
+    parser.add_argument('--cuda', action='store_true', help='use cuda (requires cupy)')
     args = parser.parse_args()
 
     # Choose the right dtype for the desired precision
@@ -46,13 +52,25 @@ def main():
     # Read input embeddings
     srcfile = open(args.src_embeddings, encoding=args.encoding, errors='surrogateescape')
     trgfile = open(args.trg_embeddings, encoding=args.encoding, errors='surrogateescape')
-    src_words, src_matrix = embeddings.read(srcfile, dtype=dtype)
-    trg_words, trg_matrix = embeddings.read(trgfile, dtype=dtype)
+    src_words, x = embeddings.read(srcfile, dtype=dtype)
+    trg_words, z = embeddings.read(trgfile, dtype=dtype)
+
+    # NumPy/CuPy management
+    if args.cuda:
+        if not supports_cupy():
+            print('ERROR: Install CuPy for CUDA support', file=sys.stderr)
+            sys.exit(-1)
+        xp = get_cupy()
+        x = xp.asarray(x)
+        z = xp.asarray(z)
+    else:
+        xp = np
+    xp.random.seed(args.seed)
 
     # Length normalize embeddings so their dot product effectively computes the cosine similarity
     if not args.dot:
-        src_matrix = embeddings.length_normalize(src_matrix)
-        trg_matrix = embeddings.length_normalize(trg_matrix)
+        x = embeddings.length_normalize(x)
+        z = embeddings.length_normalize(z)
 
     # Build word to index map
     src_word2ind = {word: i for i, word in enumerate(src_words)}
@@ -72,20 +90,52 @@ def main():
             vocab.add(src)
         except KeyError:
             oov.add(src)
+    src = list(src2trg.keys())
     oov -= vocab  # If one of the translation options is in the vocabulary, then the entry is not an oov
     coverage = len(src2trg) / (len(src2trg) + len(oov))
 
+    # Find translations
+    translation = collections.defaultdict(int)
+    if args.retrieval == 'nn':  # Standard nearest neighbor
+        for i in range(0, len(src), BATCH_SIZE):
+            j = min(i + BATCH_SIZE, len(src))
+            similarities = x[src[i:j]].dot(z.T)
+            nn = similarities.argmax(axis=1).tolist()
+            for k in range(j-i):
+                translation[src[i+k]] = nn[k]
+    elif args.retrieval == 'invnn':  # Inverted nearest neighbor
+        best_rank = np.full(len(src), x.shape[0], dtype=int)
+        best_sim = np.full(len(src), -100, dtype=dtype)
+        for i in range(0, z.shape[0], BATCH_SIZE):
+            j = min(i + BATCH_SIZE, z.shape[0])
+            similarities = z[i:j].dot(x.T)
+            ind = (-similarities).argsort(axis=1)
+            ranks = asnumpy(ind.argsort(axis=1)[:, src])
+            sims = asnumpy(similarities[:, src])
+            for k in range(i, j):
+                for l in range(len(src)):
+                    rank = ranks[k-i, l]
+                    sim = sims[k-i, l]
+                    if rank < best_rank[l] or (rank == best_rank[l] and sim > best_sim[l]):
+                        best_rank[l] = rank
+                        best_sim[l] = sim
+                        translation[src[l]] = k
+    elif args.retrieval == 'invsoftmax':  # Inverted softmax
+        sample = xp.arange(x.shape[0]) if args.inv_sample is None else xp.random.randint(0, x.shape[0], args.inv_sample)
+        partition = xp.zeros(z.shape[0])
+        for i in range(0, len(sample), BATCH_SIZE):
+            j = min(i + BATCH_SIZE, len(sample))
+            partition += xp.exp(args.inv_temperature*z.dot(x[sample[i:j]].T)).sum(axis=1)
+        for i in range(0, len(src), BATCH_SIZE):
+            j = min(i + BATCH_SIZE, len(src))
+            p = xp.exp(args.inv_temperature*x[src[i:j]].dot(z.T)) / partition
+            nn = p.argmax(axis=1).tolist()
+            for k in range(j-i):
+                translation[src[i+k]] = nn[k]
+
     # Compute accuracy
-    correct = 0
-    src, trg = zip(*src2trg.items())
-    for i in range(0, len(src2trg), BATCH_SIZE):
-        j = min(i + BATCH_SIZE, len(src2trg))
-        similarities = src_matrix[list(src[i:j])].dot(trg_matrix.T)
-        nn = np.argmax(similarities, axis=1).tolist()
-        for k in range(j-i):
-            if nn[k] in trg[i+k]:
-                correct += 1
-    print('Coverage:{0:7.2%}  Accuracy:{1:7.2%}'.format(coverage, correct / len(src2trg)))
+    accuracy = np.mean([1 if translation[i] in src2trg[i] else 0 for i in src])
+    print('Coverage:{0:7.2%}  Accuracy:{1:7.2%}'.format(coverage, accuracy))
 
 
 if __name__ == '__main__':

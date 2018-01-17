@@ -43,9 +43,9 @@ def main():
     mapping_group = parser.add_argument_group('mapping arguments', 'Basic embedding mapping arguments (EMNLP 2016)')
     mapping_group.add_argument('-d', '--dictionary', default=sys.stdin.fileno(), help='the training dictionary file (defaults to stdin)')
     mapping_group.add_argument('--normalize', choices=['unit', 'center', 'unitdim', 'centeremb'], nargs='*', default=[], help='the normalization actions to perform in order')
-    mapping_group.add_argument('-c', '--orthogonal', dest='orthogonal', action='store_true', help='use orthogonal constrained mapping (default)')
-    mapping_group.add_argument('-u', '--unconstrained', dest='orthogonal', action='store_false', help='use unconstrained mapping')
-    parser.set_defaults(orthogonal=True)
+    mapping_type = mapping_group.add_mutually_exclusive_group()
+    mapping_type.add_argument('-c', '--orthogonal', action='store_true', help='use orthogonal constrained mapping')
+    mapping_type.add_argument('-u', '--unconstrained', action='store_true', help='use unconstrained mapping')
     self_learning_group = parser.add_argument_group('self-learning arguments', 'Optional arguments for self-learning (ACL 2017)')
     self_learning_group.add_argument('--self_learning', action='store_true', help='enable self-learning')
     self_learning_group.add_argument('--direction', choices=['forward', 'backward', 'union'], default='forward', help='the direction for dictionary induction (defaults to forward)')
@@ -54,7 +54,19 @@ def main():
     self_learning_group.add_argument('--validation', default=None, help='a dictionary file for validation at each iteration')
     self_learning_group.add_argument('--log', help='write to a log file in tsv format at each iteration')
     self_learning_group.add_argument('-v', '--verbose', action='store_true', help='write log information to stderr at each iteration')
+    advanced_group = parser.add_argument_group('advanced mapping arguments', 'Advanced embedding mapping arguments (AAAI 2018)')
+    advanced_group.add_argument('--whiten', action='store_true', help='whiten the embeddings')
+    advanced_group.add_argument('--src_reweight', type=float, default=0, nargs='?', const=1, help='re-weight the source language embeddings')
+    advanced_group.add_argument('--trg_reweight', type=float, default=0, nargs='?', const=1, help='re-weight the target language embeddings')
+    advanced_group.add_argument('--src_dewhiten', choices=['src', 'trg'], help='de-whiten the source language embeddings')
+    advanced_group.add_argument('--trg_dewhiten', choices=['src', 'trg'], help='de-whiten the target language embeddings')
+    advanced_group.add_argument('--dim_reduction', type=int, default=0, help='apply dimensionality reduction')
     args = parser.parse_args()
+
+    # Check command line arguments
+    if (args.src_dewhiten is not None or args.trg_dewhiten is not None) and not args.whiten:
+        print('ERROR: De-whitening requires whitening first', file=sys.stderr)
+        sys.exit(-1)
 
     # Choose the right dtype for the desired precision
     if args.precision == 'fp16':
@@ -132,7 +144,7 @@ def main():
     if args.log:
         log = open(args.log, mode='w', encoding=args.encoding, errors='surrogateescape')
 
-    # Normalize embeddings
+    # STEP 0: Normalization
     for action in args.normalize:
         if action == 'unit':
             x = embeddings.length_normalize(x)
@@ -157,10 +169,51 @@ def main():
         if args.orthogonal:  # orthogonal mapping
             u, s, vt = xp.linalg.svd(z[trg_indices].T.dot(x[src_indices]))
             w = vt.T.dot(u.T)
-        else:  # unconstrained mapping
+            xw = x.dot(w)
+            zw = z
+        elif args.unconstrained:  # unconstrained mapping
             x_pseudoinv = xp.linalg.inv(x[src_indices].T.dot(x[src_indices])).dot(x[src_indices].T)
             w = x_pseudoinv.dot(z[trg_indices])
-        xw = x.dot(w)
+            xw = x.dot(w)
+            zw = z
+        else:  # advanced mapping
+            xw = x
+            zw = z
+
+            # STEP 1: Whitening
+            def whitening_transformation(m):
+                u, s, vt = xp.linalg.svd(m, full_matrices=False)
+                return vt.T.dot(xp.diag(1/s)).dot(vt)
+            if args.whiten:
+                wx1 = whitening_transformation(xw[src_indices])
+                wz1 = whitening_transformation(zw[trg_indices])
+                xw = xw.dot(wx1)
+                zw = zw.dot(wz1)
+
+            # STEP 2: Orthogonal mapping
+            wx2, s, wz2_t = xp.linalg.svd(xw[src_indices].T.dot(zw[trg_indices]))
+            wz2 = wz2_t.T
+            xw = xw.dot(wx2)
+            zw = zw.dot(wz2)
+
+            # STEP 3: Re-weighting
+            xw *= s**args.src_reweight
+            zw *= s**args.trg_reweight
+
+            # STEP 4: De-whitening
+            if args.src_dewhiten == 'src':
+                xw = xw.dot(wx2.T.dot(xp.linalg.inv(wx1)).dot(wx2))
+            elif args.src_dewhiten == 'trg':
+                xw = xw.dot(wz2.T.dot(xp.linalg.inv(wz1)).dot(wz2))
+            if args.trg_dewhiten == 'src':
+                zw = zw.dot(wx2.T.dot(xp.linalg.inv(wx1)).dot(wx2))
+            elif args.trg_dewhiten == 'trg':
+                zw = zw.dot(wz2.T.dot(xp.linalg.inv(wz1)).dot(wz2))
+
+            # STEP 5: Dimensionality reduction
+            if args.dim_reduction > 0:
+                xw = xw[:, :args.dim_reduction]
+                zw = zw[:, :args.dim_reduction]
 
         # Self-learning
         if args.self_learning:
@@ -176,7 +229,7 @@ def main():
                 j = min(x.shape[0], i + MAX_DIM_X)
                 for k in range(0, z.shape[0], MAX_DIM_Z):
                     l = min(z.shape[0], k + MAX_DIM_Z)
-                    sim = xw[i:j].dot(z[k:l].T)
+                    sim = xw[i:j].dot(zw[k:l].T)
                     if args.direction in ('forward', 'union'):
                         ind = sim.argmax(axis=1)
                         val = sim[xp.arange(sim.shape[0]), ind]
@@ -213,7 +266,7 @@ def main():
             # Accuracy and similarity evaluation in validation
             if args.validation is not None:
                 src = list(validation.keys())
-                sim = xw[src].dot(z.T)  # TODO Assuming that it fits in memory
+                sim = xw[src].dot(zw.T)  # TODO Assuming that it fits in memory
                 nn = asnumpy(sim.argmax(axis=1))
                 accuracy = np.mean([1 if nn[i] in validation[src[i]] else 0 for i in range(len(src))])
                 similarity = np.mean([max([sim[i, j].tolist() for j in validation[src[i]]]) for i in range(len(src))])
@@ -242,7 +295,7 @@ def main():
     srcfile = open(args.src_output, mode='w', encoding=args.encoding, errors='surrogateescape')
     trgfile = open(args.trg_output, mode='w', encoding=args.encoding, errors='surrogateescape')
     embeddings.write(src_words, xw, srcfile)
-    embeddings.write(trg_words, z, trgfile)
+    embeddings.write(trg_words, zw, trgfile)
     srcfile.close()
     trgfile.close()
 

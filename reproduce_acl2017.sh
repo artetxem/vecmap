@@ -22,7 +22,7 @@ OUTPUT="$ROOT/output/acl2017"
 METHOD_COUNT=5
 METHOD_IDS=('mikolov2013a' 'xing2015' 'zhang2016' 'artetxe2016' 'proposed')
 METHOD_NAMES=('Mikolov et al. (2013a)' 'Xing et al. (2015)    ' 'Zhang et al. (2016)   ' 'Artetxe et al. (2016) ' 'Proposed method       ')
-METHOD_TRAIN_ARGS=('--unconstrained' '' '' '' '--self_learning')
+METHOD_TRAIN_ARGS=('--unconstrained' '--orthogonal' '--orthogonal' '--orthogonal' '--orthogonal --self_learning')
 METHOD_EVAL_ARGS=('' '' '' '' '--dot')
 METHOD_EMBEDDINGS=('original' 'unit' 'original' 'unit-center' 'unit-center')
 
