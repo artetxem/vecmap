@@ -2,7 +2,7 @@ VecMap (bilingual word embedding mappings)
 ==============
 
 This is an open source implementation of our framework to learn bilingual word embedding mappings, described in the following papers:
-- Mikel Artetxe, Gorka Labaka, and Eneko Agirre. 2018. **Generalizing and improving bilingual word embedding mappings with a multi-step framework of linear transformations**. In *Proceedings of the Thirty-Second AAAI Conference on Artificial Intelligence (AAAI-18)*.
+- Mikel Artetxe, Gorka Labaka, and Eneko Agirre. 2018. **[Generalizing and improving bilingual word embedding mappings with a multi-step framework of linear transformations](http://ixa.eus/sites/default/files/dokumentuak/11455/aaai18.pdf)**. In *Proceedings of the Thirty-Second AAAI Conference on Artificial Intelligence (AAAI-18)*.
 - Mikel Artetxe, Gorka Labaka, and Eneko Agirre. 2017. **[Learning bilingual word embeddings with (almost) no bilingual data](https://aclweb.org/anthology/P17-1042)**. In *Proceedings of the 55th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)*, pages 451-462.
 - Mikel Artetxe, Gorka Labaka, and Eneko Agirre. 2016. **[Learning principled bilingual mappings of word embeddings while preserving monolingual invariance](https://aclweb.org/anthology/D16-1250)**. In *Proceedings of the 2016 Conference on Empirical Methods in Natural Language Processing*, pages 2289-2294.
 
