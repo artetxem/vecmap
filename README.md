@@ -59,7 +59,7 @@ python3 normalize_embeddings.py unit center -i TRG_EMBEDDINGS.TXT -o TRG_EMBEDDI
 ```
 2. Map the source embeddings into the target embedding space (`map_embeddings.py`). We recommend using the following settings for best results:
 ```
-python3 map_embeddings.py --whiten --src_dewhiten src --trg_dewhiten trg --trg_reweight SRC_EMBEDDINGS.NORMALIZED.TXT TRG_EMBEDDINGS.NORMALIZED.TXT SRC_EMBEDDINGS.MAPPED.TXT TRG_EMBEDDINGS.MAPPED.TXT -d TRAIN_DICTIONARY.TXT
+python3 map_embeddings.py --whiten --trg_reweight --src_dewhiten src --trg_dewhiten trg SRC_EMBEDDINGS.NORMALIZED.TXT TRG_EMBEDDINGS.NORMALIZED.TXT SRC_EMBEDDINGS.MAPPED.TXT TRG_EMBEDDINGS.MAPPED.TXT -d TRAIN_DICTIONARY.TXT
 ```
 If your seed dictionary is small, you should use an orthogonal mapping with the self-learning extension as follows (note that this might take a few hours):
 ```
