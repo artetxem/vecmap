@@ -10,6 +10,8 @@ The first and third papers describe the general framework, whereas the second in
 
 The package includes the tools necessary to map embeddings from one language into another as described in the papers, evaluation tools for word translation induction, word analogy and word similarity/relatedness, and scripts to reproduce the results reported there.
 
+**NOTE**: The code for our ACL 2018 paper "A robust self-learning method for fully unsupervised cross-lingual mappings of word embeddings" is not available yet, but should be coming soon. If you want to get notified when it is, you can watch this repository or follow me at Twitter (@artetxem).
+
 If you use this software for academic research, please cite the relevant paper(s):
 ```
 @inproceedings{artetxe2018generalizing,
