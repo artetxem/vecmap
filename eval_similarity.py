@@ -31,7 +31,7 @@ def main():
     parser.add_argument('-l', '--lowercase', action='store_true', help='lowercase the words in the test files')
     parser.add_argument('--backoff', default=None, type=float, help='use a backoff similarity score for OOV entries')
     parser.add_argument('--encoding', default='utf-8', help='the character encoding for input/output (defaults to utf-8)')
-    parser.add_argument('--precision', choices=['fp16', 'fp32', 'fp64'], default='fp64', help='the floating-point precision (defaults to fp64)')
+    parser.add_argument('--precision', choices=['fp16', 'fp32', 'fp64'], default='fp32', help='the floating-point precision (defaults to fp32)')
     parser.add_argument('--sim', nargs='*', help='the names of the datasets to include in the similarity results')
     parser.add_argument('--rel', nargs='*', help='the names of the datasets to include in the relatedness results')
     parser.add_argument('--all', nargs='*', help='the names of the datasets to include in the total results')
@@ -70,8 +70,8 @@ def main():
     trg_words, trg_matrix = embeddings.read(trgfile, vocabulary=trg_vocab, dtype=dtype)
 
     # Length normalize embeddings so their dot product effectively computes the cosine similarity
-    src_matrix = embeddings.length_normalize(src_matrix)
-    trg_matrix = embeddings.length_normalize(trg_matrix)
+    embeddings.length_normalize(src_matrix)
+    embeddings.length_normalize(trg_matrix)
 
     # Build word to index map
     src_word2ind = {word: i for i, word in enumerate(src_words)}

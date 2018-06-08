@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (C) 2017  Mikel Artetxe <artetxem@gmail.com>
+# Copyright (C) 2017-2018  Mikel Artetxe <artetxem@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,14 +20,12 @@ DATA="$ROOT/data"
 mkdir -p "$DATA/analogies"
 mkdir -p "$DATA/similarity"
 mkdir -p "$DATA/dictionaries"
-mkdir -p "$DATA/embeddings/original"
-mkdir -p "$DATA/embeddings/unit"
-mkdir -p "$DATA/embeddings/unit-center"
+mkdir -p "$DATA/embeddings"
 
 # Download English-Italian data from Dinu et al. (2015)
 wget -q http://clic.cimec.unitn.it/~georgiana.dinu/down/resources/transmat.zip -O "$DATA/transmat.zip"
-unzip -p "$DATA/transmat.zip" data/EN.200K.cbow1_wind5_hs0_neg10_size300_smpl1e-05.txt > "$DATA/embeddings/original/en.emb.txt"
-unzip -p "$DATA/transmat.zip" data/IT.200K.cbow1_wind5_hs0_neg10_size300_smpl1e-05.txt > "$DATA/embeddings/original/it.emb.txt"
+unzip -p "$DATA/transmat.zip" data/EN.200K.cbow1_wind5_hs0_neg10_size300_smpl1e-05.txt > "$DATA/embeddings/en.emb.txt"
+unzip -p "$DATA/transmat.zip" data/IT.200K.cbow1_wind5_hs0_neg10_size300_smpl1e-05.txt > "$DATA/embeddings/it.emb.txt"
 unzip -p "$DATA/transmat.zip" data/OPUS_en_it_europarl_train_5K.txt > "$DATA/dictionaries/en-it.train.txt"
 unzip -p "$DATA/transmat.zip" data/OPUS_en_it_europarl_test.txt > "$DATA/dictionaries/en-it.test.txt"
 rm -f "$DATA/transmat.zip"
@@ -45,24 +43,12 @@ unzip -p "$DATA/mws353.zip" MWS353_Cross-lingual_datasets/cross_en_it_MWS353.txt
 rm -f "$DATA/mws353.zip"
 
 # Download remaining data from our own release
-wget -q http://ixa2.si.ehu.es/eneko/tmp/vecmap/de.emb.txt.gz -O "$DATA/embeddings/original/de.emb.txt.gz"
-wget -q http://ixa2.si.ehu.es/eneko/tmp/vecmap/fi.emb.txt.gz -O "$DATA/embeddings/original/fi.emb.txt.gz"
-wget -q http://ixa2.si.ehu.es/eneko/tmp/vecmap/es.emb.txt.gz -O "$DATA/embeddings/original/es.emb.txt.gz"
+wget -q http://ixa2.si.ehu.es/eneko/tmp/vecmap/de.emb.txt.gz -O "$DATA/embeddings/de.emb.txt.gz"
+wget -q http://ixa2.si.ehu.es/eneko/tmp/vecmap/fi.emb.txt.gz -O "$DATA/embeddings/fi.emb.txt.gz"
+wget -q http://ixa2.si.ehu.es/eneko/tmp/vecmap/es.emb.txt.gz -O "$DATA/embeddings/es.emb.txt.gz"
 wget -q http://ixa2.si.ehu.es/eneko/tmp/vecmap/dictionaries.tar.gz -O "$DATA/dictionaries.tar.gz"
-gunzip "$DATA/embeddings/original/de.emb.txt.gz"
-gunzip "$DATA/embeddings/original/fi.emb.txt.gz"
-gunzip "$DATA/embeddings/original/es.emb.txt.gz"
+gunzip "$DATA/embeddings/de.emb.txt.gz"
+gunzip "$DATA/embeddings/fi.emb.txt.gz"
+gunzip "$DATA/embeddings/es.emb.txt.gz"
 tar -xzf "$DATA/dictionaries.tar.gz" -C "$DATA/dictionaries"
 rm -f "$DATA/dictionaries.tar.gz"
-
-# Normalize word embeddings
-python3 "$ROOT/normalize_embeddings.py" unit -i "$DATA/embeddings/original/en.emb.txt" -o "$DATA/embeddings/unit/en.emb.txt"
-python3 "$ROOT/normalize_embeddings.py" unit -i "$DATA/embeddings/original/it.emb.txt" -o "$DATA/embeddings/unit/it.emb.txt"
-python3 "$ROOT/normalize_embeddings.py" unit -i "$DATA/embeddings/original/de.emb.txt" -o "$DATA/embeddings/unit/de.emb.txt"
-python3 "$ROOT/normalize_embeddings.py" unit -i "$DATA/embeddings/original/fi.emb.txt" -o "$DATA/embeddings/unit/fi.emb.txt"
-python3 "$ROOT/normalize_embeddings.py" unit -i "$DATA/embeddings/original/es.emb.txt" -o "$DATA/embeddings/unit/es.emb.txt"
-python3 "$ROOT/normalize_embeddings.py" unit center -i "$DATA/embeddings/original/en.emb.txt" -o "$DATA/embeddings/unit-center/en.emb.txt"
-python3 "$ROOT/normalize_embeddings.py" unit center -i "$DATA/embeddings/original/it.emb.txt" -o "$DATA/embeddings/unit-center/it.emb.txt"
-python3 "$ROOT/normalize_embeddings.py" unit center -i "$DATA/embeddings/original/de.emb.txt" -o "$DATA/embeddings/unit-center/de.emb.txt"
-python3 "$ROOT/normalize_embeddings.py" unit center -i "$DATA/embeddings/original/fi.emb.txt" -o "$DATA/embeddings/unit-center/fi.emb.txt"
-python3 "$ROOT/normalize_embeddings.py" unit center -i "$DATA/embeddings/original/es.emb.txt" -o "$DATA/embeddings/unit-center/es.emb.txt"

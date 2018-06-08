@@ -32,7 +32,7 @@ def main():
     parser.add_argument('-v', '--verbose', action='store_true', help='verbose output (give category specific results)')
     parser.add_argument('-l', '--lowercase', action='store_true', help='lowercase the words in the test file')
     parser.add_argument('--encoding', default='utf-8', help='the character encoding for input/output (defaults to utf-8)')
-    parser.add_argument('--precision', choices=['fp16', 'fp32', 'fp64'], default='fp64', help='the floating-point precision (defaults to fp64)')
+    parser.add_argument('--precision', choices=['fp16', 'fp32', 'fp64'], default='fp32', help='the floating-point precision (defaults to fp32)')
     args = parser.parse_args()
 
     # Choose the right dtype for the desired precision
@@ -51,7 +51,7 @@ def main():
     word2ind = {word: i for i, word in enumerate(words)}
 
     # Length normalize embeddings
-    matrix = embeddings.length_normalize(matrix)
+    embeddings.length_normalize(matrix)
 
     # Parse test file
     f = open(args.input, encoding=args.encoding, errors='surrogateescape')

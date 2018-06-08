@@ -1,4 +1,4 @@
-# Copyright (C) 2016-2017  Mikel Artetxe <artetxem@gmail.com>
+# Copyright (C) 2016-2018  Mikel Artetxe <artetxem@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -33,15 +33,7 @@ def main():
     words, matrix = embeddings.read(f)
 
     # Perform normalization actions
-    for action in args.actions:
-        if action == 'unit':
-            matrix = embeddings.length_normalize(matrix)
-        elif action == 'center':
-            matrix = embeddings.mean_center(matrix)
-        elif action == 'unitdim':
-            matrix = embeddings.length_normalize_dimensionwise(matrix)
-        elif action == 'centeremb':
-            matrix = embeddings.mean_center_embeddingwise(matrix)
+    embeddings.normalize(matrix, args.actions)
 
     # Write normalized embeddings
     f = open(args.output, mode='w', encoding=args.encoding, errors='surrogateescape')
