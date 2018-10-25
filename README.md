@@ -2,7 +2,7 @@ VecMap (cross-lingual word embedding mappings)
 ==============
 
 This is an open source implementation of our framework to learn cross-lingual word embedding mappings, described in the following papers:
-- Mikel Artetxe, Gorka Labaka, and Eneko Agirre. 2018. **[A robust self-learning method for fully unsupervised cross-lingual mappings of word embeddings](https://arxiv.org/pdf/1805.06297.pdf)**. In *Proceedings of the 56th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)*.
+- Mikel Artetxe, Gorka Labaka, and Eneko Agirre. 2018. **[A robust self-learning method for fully unsupervised cross-lingual mappings of word embeddings](https://aclweb.org/anthology/P18-1073)**. In *Proceedings of the 56th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)*.
 - Mikel Artetxe, Gorka Labaka, and Eneko Agirre. 2018. **[Generalizing and improving bilingual word embedding mappings with a multi-step framework of linear transformations](https://www.aaai.org/ocs/index.php/AAAI/AAAI18/paper/view/16935/16781)**. In *Proceedings of the Thirty-Second AAAI Conference on Artificial Intelligence (AAAI-18)*, pages 5012-5019.
 - Mikel Artetxe, Gorka Labaka, and Eneko Agirre. 2017. **[Learning bilingual word embeddings with (almost) no bilingual data](https://aclweb.org/anthology/P17-1042)**. In *Proceedings of the 55th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)*, pages 451-462.
 - Mikel Artetxe, Gorka Labaka, and Eneko Agirre. 2016. **[Learning principled bilingual mappings of word embeddings while preserving monolingual invariance](https://aclweb.org/anthology/D16-1250)**. In *Proceedings of the 2016 Conference on Empirical Methods in Natural Language Processing*, pages 2289-2294.
@@ -139,7 +139,7 @@ After publishing the paper, we discovered a bug in the code that was causing tho
 See also
 --------
 
-VecMap is a basic building block of [UNdreaMT](https://github.com/artetxem/undreamt), our Unsupervised Neural Machine Translation system. You can use them in combination to train your own machine translation model from monolingual corpora alone.
+VecMap is a basic building block of [Monoses](https://github.com/artetxem/monoses), our Unsupervised Statistical Machine Translation system. You can use them in combination to train your own machine translation model from monolingual corpora alone.
 
 
 Publications
@@ -151,7 +151,8 @@ If you use this software for academic research, please cite the relevant paper(s
   author    = {Artetxe, Mikel  and  Labaka, Gorka  and  Agirre, Eneko},
   title     = {A robust self-learning method for fully unsupervised cross-lingual mappings of word embeddings},
   booktitle = {Proceedings of the 56th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)},
-  year      = {2018}
+  year      = {2018},
+  pages     = {789--798}
 }
 
 @inproceedings{artetxe2018aaai,
