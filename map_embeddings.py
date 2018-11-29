@@ -108,6 +108,11 @@ def main():
     self_learning_group.add_argument('--stochastic_interval', default=50, type=int, help='stochastic dictionary induction interval (defaults to 50)')
     self_learning_group.add_argument('--log', help='write to a log file in tsv format at each iteration')
     self_learning_group.add_argument('-v', '--verbose', action='store_true', help='write log information to stderr at each iteration')
+
+    ext_group = parser.add_argument_group('extension arguments', 'CS388L Final Project')
+    ext_type  = ext_group.add_mutually_exclusive_group()
+    ext_type.add_argument('--concatenate', nargs='*', default=None, help='any other target languages to be concatenated with first target language')
+    ext_type.add_argument('--remove_lan_from_target', nargs='*', default=None, help='remove specific langague embeddings from target embeddings')
     args = parser.parse_args()
 
     if args.supervised is not None:
@@ -146,6 +151,18 @@ def main():
     trgfile = open(args.trg_input, encoding=args.encoding, errors='surrogateescape')
     src_words, x = embeddings.read(srcfile, dtype=dtype)
     trg_words, z = embeddings.read(trgfile, dtype=dtype)
+
+    # handle concatenation
+    if args.concatenate:
+        for lan in args.concatenate:
+            if lan == args.trg_input:
+                raise Exception("why are you trying to concatenate the same target langague?")
+            trg_file_to_append = open(lan, encoding=args.encoding, errors='surrogateescape')
+            trg_words_to_append, z_to_append = embeddings.read(trg_file_to_append, dtype=dtype)
+            trg_words = trg_words + trg_words_to_append
+
+            z = np.concatenate((z, z_to_append))
+            trg_file_to_append.close()
 
     # NumPy/CuPy management
     if args.cuda:
