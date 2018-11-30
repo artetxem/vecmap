@@ -22,6 +22,7 @@ import numpy as np
 import re
 import sys
 import time
+import ext
 
 
 def dropout(m, p):
@@ -110,9 +111,8 @@ def main():
     self_learning_group.add_argument('-v', '--verbose', action='store_true', help='write log information to stderr at each iteration')
 
     ext_group = parser.add_argument_group('extension arguments', 'CS388L Final Project')
-    ext_type  = ext_group.add_mutually_exclusive_group()
-    ext_type.add_argument('--concatenate', nargs='*', default=None, help='any other target languages to be concatenated with first target language')
-    ext_type.add_argument('--remove_lan_from_target', nargs='*', default=None, help='remove specific langague embeddings from target embeddings')
+    ext_group.add_argument('--concatenate', nargs='*', default=None, help='any other target languages to be concatenated with first target language')
+    ext_group.add_argument('--remove_lan_from_target', nargs='*', default=None, help='remove specific langague embeddings from target embeddings')
     args = parser.parse_args()
 
     if args.supervised is not None:
@@ -152,6 +152,7 @@ def main():
     src_words, x = embeddings.read(srcfile, dtype=dtype)
     trg_words, z = embeddings.read(trgfile, dtype=dtype)
 
+    lan_tracker = {}
     # handle concatenation
     if args.concatenate:
         for lan in args.concatenate:
@@ -159,6 +160,7 @@ def main():
                 raise Exception("why are you trying to concatenate the same target langague?")
             trg_file_to_append = open(lan, encoding=args.encoding, errors='surrogateescape')
             trg_words_to_append, z_to_append = embeddings.read(trg_file_to_append, dtype=dtype)
+            lan_tracker[lan] = (len(trg_words), len(trg_words) + len(trg_words_to_append))
             trg_words = trg_words + trg_words_to_append
 
             z = np.concatenate((z, z_to_append))
@@ -426,6 +428,9 @@ def main():
         t = time.time()
         it += 1
 
+    # if requested remove some lans from trg
+    if args.remove_lan_from_target:
+        trg_words, zw = ext.multi_lan_cleanup(trg_words, zw, lan_tracker, args.remove_lan_from_target)
     # Write mapped embeddings
     srcfile = open(args.src_output, mode='w', encoding=args.encoding, errors='surrogateescape')
     trgfile = open(args.trg_output, mode='w', encoding=args.encoding, errors='surrogateescape')
