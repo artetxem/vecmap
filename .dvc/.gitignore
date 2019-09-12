@@ -1,0 +1,9 @@
+/state
+/lock
+/config.local
+/updater
+/updater.lock
+/repos
+/state-journal
+/state-wal
+/cache
