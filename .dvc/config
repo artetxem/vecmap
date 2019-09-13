@@ -1,0 +1,4 @@
+['remote "s3remote"']
+url = s3://vecmap/vecmap
+[core]
+remote = s3remote
