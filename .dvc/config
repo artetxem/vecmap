@@ -1,5 +1,6 @@
 ['remote "s3remote"']
 url = s3://vecmap/vecmap
 region = us-east-1
+endpointurl = http://vecmap.s3.amazonaws.com
 [core]
 remote = s3remote
