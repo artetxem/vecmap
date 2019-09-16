@@ -4,4 +4,4 @@ RUN git clone https://github.com/ngarneau/vecmap.git /vecmap
 WORKDIR /vecmap
 
 RUN pip install -r requirements.txt
-CMD ["bash"]
+CMD ["reproduce.sh"]
