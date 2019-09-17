@@ -1,3 +1,5 @@
 #!/bin/bash
 #
-dvc pull -r publicremote
+
+dvc pull
+
