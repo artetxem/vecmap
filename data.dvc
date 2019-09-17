@@ -1,5 +1,4 @@
 md5: 3293c4838bba202d5dacebc2879bd529
-wdir: .
 outs:
 - md5: 0202d8aebdcc55e737355eb1d29aff9c.dir
   path: data

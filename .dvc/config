@@ -1,5 +1,4 @@
-
 ['remote "storage"']
-url = http://vecmap.s3.amazonaws.com/vecmap
+url = http://s3.amazonaws.com/vecmap
 [core]
 remote = storage

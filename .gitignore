@@ -10,3 +10,4 @@ __pycache__/
 *$py.class
 .idea/
 venv/
+/data
