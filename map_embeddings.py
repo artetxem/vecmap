@@ -26,7 +26,7 @@ def main():
     parser.add_argument('src_output', help='the output source embeddings')
     parser.add_argument('trg_output', help='the output target embeddings')
     parser.add_argument('--encoding', default='utf-8', help='the character encoding for input/output (defaults to utf-8)')
-    parser.add_argument('--precision', choices=['fp16', 'fp32', 'fp64'], default='fp32', help='the floating-point precision (defaults to fp32)')
+    parser.add_argument('--precision', choices=['float16', 'float32', 'float64'], default='float32', help='the floating-point precision (defaults to float32)')
     parser.add_argument('--cuda', action='store_true', help='use cuda (requires cupy)')
     parser.add_argument('--device_id', default=None, type=int, help='device ID used for the --cuda option (defaults to 0)')
     parser.add_argument('--batch_size', default=10000, type=int, help='batch size (defaults to 10000); does not affect results, larger is usually faster but uses more memory')
@@ -50,7 +50,7 @@ def main():
     init_type.add_argument('--init_identical', action='store_true', help='use identical words as the seed dictionary')
     init_type.add_argument('--init_numerals', action='store_true', help='use latin numerals (i.e. words matching [0-9]+) as the seed dictionary')
     init_type.add_argument('--init_unsupervised', action='store_true', help='use unsupervised initialization')
-    init_group.add_argument('--unsupervised_vocab', type=int, default=0, help='restrict the vocabulary to the top k entries for unsupervised initialization')
+    init_group.add_argument('--unsupervised_vocab', type=int, default=None, help='restrict the vocabulary to the top k entries for unsupervised initialization')
 
     mapping_group = parser.add_argument_group('advanced mapping arguments', 'Advanced embedding mapping arguments')
     mapping_group.add_argument('--normalize', choices=['unit', 'center', 'unitdim', 'centeremb', 'none'], nargs='*', default=[], help='the normalization actions to perform in order')
@@ -59,14 +59,14 @@ def main():
     mapping_group.add_argument('--trg_reweight', type=float, default=0, nargs='?', const=1, help='re-weight the target language embeddings')
     mapping_group.add_argument('--src_dewhiten', choices=['src', 'trg'], help='de-whiten the source language embeddings')
     mapping_group.add_argument('--trg_dewhiten', choices=['src', 'trg'], help='de-whiten the target language embeddings')
-    mapping_group.add_argument('--dim_reduction', type=int, default=0, help='apply dimensionality reduction')
+    mapping_group.add_argument('--dim_reduction', type=int, default=None, help='apply dimensionality reduction')
     mapping_type = mapping_group.add_mutually_exclusive_group()
     mapping_type.add_argument('-c', '--orthogonal', action='store_true', help='use orthogonal constrained mapping')
     mapping_type.add_argument('-u', '--unconstrained', action='store_true', help='use unconstrained mapping')
 
     self_learning_group = parser.add_argument_group('advanced self-learning arguments', 'Advanced arguments for self-learning')
     self_learning_group.add_argument('--self_learning', action='store_true', help='enable self-learning')
-    self_learning_group.add_argument('--vocabulary_cutoff', type=int, default=0, help='restrict the vocabulary to the top k entries')
+    self_learning_group.add_argument('--vocabulary_cutoff', type=int, default=None, help='restrict the vocabulary to the top k entries')
     self_learning_group.add_argument('--direction', choices=['forward', 'backward', 'union'], default='union', help='the direction for dictionary induction (defaults to union)')
     self_learning_group.add_argument('--csls', type=int, nargs='?', default=0, const=10, metavar='NEIGHBORHOOD_SIZE', dest='csls_neighborhood', help='use CSLS for dictionary induction')
     self_learning_group.add_argument('--threshold', default=0.000001, type=float, help='the convergence threshold (defaults to 0.000001)')
@@ -74,8 +74,6 @@ def main():
     self_learning_group.add_argument('--stochastic_initial', default=0.1, type=float, help='initial keep probability stochastic dictionary induction (defaults to 0.1)')
     self_learning_group.add_argument('--stochastic_multiplier', default=2.0, type=float, help='stochastic dictionary induction multiplier (defaults to 2.0)')
     self_learning_group.add_argument('--stochastic_interval', default=50, type=int, help='stochastic dictionary induction interval (defaults to 50)')
-    self_learning_group.add_argument('--log', help='write to a log file in tsv format at each iteration')
-    self_learning_group.add_argument('-v', '--verbose', action='store_true', help='write log information to stderr at each iteration')
     args = parser.parse_args()
 
     if args.supervised is not None:
@@ -100,7 +98,7 @@ def main():
     training_mode = 'orthogonal' if args.orthogonal else \
                     'unconstrained' if args.unconstrained else \
                     'advanced'
-    init_dictionary_mode =  'unsupervised' if args.unsupervised_vocab else \
+    init_dictionary_mode =  'unsupervised' if args.init_unsupervised else \
                             'identical' if args.init_identical else \
                             'numerals' if args.init_numerals else \
                             'seed'
@@ -124,25 +122,22 @@ def main():
     if args.cuda:
         vecmap.to_cuda(args.device_id)
     vecmap.set_seed(args.seed)
+    vecmap.set_train_data(
+        src_input = args.src_input,
+        trg_input = args.trg_input,
+        seed_dictionary = args.init_dictionary,
+    )
     if args.validation is not None:
         vecmap.set_validation_dictionary(args.validation)
     if args.self_learning:
         vecmap.self_learning_train(
-            src_input = args.src_input,
-            trg_input = args.trg_input,
-            seed_dictionary = args.init_dictionary,
             dict_update_batch_size = args.batch_size,
             objective_threshold = args.threshold,
             stochastic_interval = args.stochastic_interval,
             stochastic_initial = args.stochastic_initial,
-            log = args.log,
         )
     else:
-        vecmap.train(
-            src_input = args.src_input,
-            trg_input = args.trg_input,
-            seed_dictionary = args.init_dictionary,
-        )
+        vecmap.train()
     vecmap.save_embeddings(
         src_output = args.src_output,
         trg_output = args.trg_output,
