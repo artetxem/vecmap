@@ -58,6 +58,7 @@ def main():
     parser.add_argument('--seed', type=int, default=0, help='the random seed')
     parser.add_argument('--precision', choices=['fp16', 'fp32', 'fp64'], default='fp32', help='the floating-point precision (defaults to fp32)')
     parser.add_argument('--cuda', action='store_true', help='use cuda (requires cupy)')
+    parser.add_argument('--device_id', default=None, type=int, help='device ID used for the --cuda option (defaults to 0)')
     args = parser.parse_args()
 
     # Choose the right dtype for the desired precision
@@ -80,6 +81,8 @@ def main():
             print('ERROR: Install CuPy for CUDA support', file=sys.stderr)
             sys.exit(-1)
         xp = get_cupy()
+        if args.device_id is not None:
+            xp.cuda.Device(args.device_id).use()
         x = xp.asarray(x)
         z = xp.asarray(z)
     else:
