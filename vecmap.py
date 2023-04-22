@@ -4,6 +4,7 @@ import embeddings
 import re
 import time
 import collections
+from sklearn.decomposition import PCA
 
 
 def topk_mean(m, k, inplace=False):  # TODO Assuming that axis is 1
@@ -351,12 +352,19 @@ class VecMap:
         src_input : str,
         trg_input : str,
         seed_dictionary : str = None,
+        pca : bool = False,
+        n_components : int = None,
     ) -> None:
         VecMap._check_seed_dictionary(self._init_dictionary_mode, seed_dictionary)
         with open(src_input, encoding=self.encoding, errors='surrogateescape') as srcfile:
             self.x_words, x = embeddings.read(srcfile, dtype=self.dtype)
         with open(trg_input, encoding=self.encoding, errors='surrogateescape') as trgfile:
             self.z_words, z = embeddings.read(trgfile, dtype=self.dtype)
+        if pca:
+            if n_components is None:
+                n_components = min(x.shape[1], z.shape[1])
+            x = PCA(n_components=n_components, svd_solver='full').fit_transform(x)
+            z = PCA(n_components=n_components, svd_solver='full').fit_transform(z)
         self.x = self.xp.asarray(x)
         self.z = self.xp.asarray(z)
         embeddings.normalize(self.x, self.normalization_actions)

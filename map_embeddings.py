@@ -126,6 +126,7 @@ def main():
         src_input = args.src_input,
         trg_input = args.trg_input,
         seed_dictionary = args.init_dictionary,
+        pca = True,
     )
     if args.validation is not None:
         vecmap.set_validation_dictionary(args.validation)
