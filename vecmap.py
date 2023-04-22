@@ -143,7 +143,10 @@ class VecMap:
     def _bidirectional_orthogonal_map(self, x, ix, z, iz):
         wx, s, wz_t = self.xp.linalg.svd(x[ix].T @ z[iz])
         wz = wz_t.T
-        return x @ wx, z @ wz, wx, wz, s
+        size = min(wx.shape[0], wz.shape[0])
+        wx, wz = wx[:, :size], wz[:, :size]
+        xw, zw = x @ wx, z @ wz
+        return xw, zw, wx, wz, s
     
 
     def _reweight(self, a, s, rw=0):
@@ -191,6 +194,8 @@ class VecMap:
 
     def _orthogonal_map(self, x, ix, z, iz):
         u, s, v_t = self.xp.linalg.svd(z[iz].T @ x[ix])
+        size = min(u.shape[0], v_t.shape[0])
+        u, v_t = u[:, :size], v_t[:size, :]
         xw = x @ v_t.T @ u.T
         zw = z.copy()
         return xw, zw
