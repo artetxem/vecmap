@@ -29,6 +29,7 @@ def main():
     parser.add_argument('--precision', choices=['float16', 'float32', 'float64'], default='float32', help='the floating-point precision (defaults to float32)')
     parser.add_argument('--cuda', action='store_true', help='use cuda (requires cupy)')
     parser.add_argument('--device_id', default=None, type=int, help='device ID used for the --cuda option (defaults to 0)')
+    parser.add_argument('--pca', action='store_true', help='use pca first')
     parser.add_argument('--batch_size', default=10000, type=int, help='batch size (defaults to 10000); does not affect results, larger is usually faster but uses more memory')
     parser.add_argument('--seed', type=int, default=0, help='the random seed (defaults to 0)')
 
@@ -126,7 +127,7 @@ def main():
         src_input = args.src_input,
         trg_input = args.trg_input,
         seed_dictionary = args.init_dictionary,
-        pca = True,
+        pca = args.pca,
     )
     if args.validation is not None:
         vecmap.set_validation_dictionary(args.validation)
