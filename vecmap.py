@@ -125,12 +125,12 @@ class VecMap:
 
     def _whitening_transformation(self, m):
         u, s, vt = self.xp.linalg.svd(m, full_matrices=False)
-        return vt.T.dot(self.xp.diag(1/s)).dot(vt)
+        return vt.T @ self.xp.diag(1/s) @ vt
     
 
     def _actual_whiten(self, a, indices):
         w1 = self._whitening_transformation(a[indices])
-        return a.dot(w1), w1
+        return a @ w1, w1
     
 
     def _whiten(self, a, indices):
@@ -141,9 +141,9 @@ class VecMap:
     
     
     def _bidirectional_orthogonal_map(self, x, ix, z, iz):
-        wx, s, wz_t = self.xp.linalg.svd(x[ix].T.dot(z[iz]))
+        wx, s, wz_t = self.xp.linalg.svd(x[ix].T @ z[iz])
         wz = wz_t.T
-        return x.dot(wx), z.dot(wz), wx, wz, s
+        return x @ wx, z @ wz, wx, wz, s
     
 
     def _reweight(self, a, s, rw=0):
@@ -151,7 +151,7 @@ class VecMap:
     
 
     def _actual_dewhiten(self, a, w1, w2):
-        return a.dot(w2.T.dot(self.xp.linalg.inv(w1)).dot(w2))
+        return a @ w2.T @ self.xp.linalg.inv(w1) @ w2
     
     
     def _dewhiten(self, a, wx1, wz1, wx2, wz2, mode):
@@ -190,15 +190,15 @@ class VecMap:
     
 
     def _orthogonal_map(self, x, ix, z, iz):
-        u, s, v_t = self.xp.linalg.svd(z[iz].T.dot(x[ix]))
-        xw = x.dot(v_t.T.dot(u.T))
+        u, s, v_t = self.xp.linalg.svd(z[iz].T @ x[ix])
+        xw = x @ v_t.T @ u.T
         zw = z.copy()
         return xw, zw
     
 
     def _unconstrained_map(self, x, ix, z, iz):
-        w = self.xp.linalg.inv(x[ix].T.dot(x[ix])).dot(x[ix].T).dot(z[iz])
-        xw = x.dot(w)
+        w = self.xp.linalg.inv(x[ix].T @ x[ix]) @ x[ix].T @ z[iz]
+        xw = x @ w
         zw = z.copy()
         return xw, zw
     
@@ -228,15 +228,15 @@ class VecMap:
     def _build_unsupervised_seed_dictionary(self):
         size = min(self.x.shape[0], self.z.shape[0], self._unsupervised_dictionary_size)
         u, s, vt = self.xp.linalg.svd(self.x[:size], full_matrices=False)
-        xsim = (u*s).dot(u.T)
+        xsim = (u*s) @ u.T
         u, s, vt = self.xp.linalg.svd(self.z[:size], full_matrices=False)
-        zsim = (u*s).dot(u.T)
+        zsim = (u*s) @ u.T
         del u, s, vt
         xsim.sort(axis=1)
         zsim.sort(axis=1)
         embeddings.normalize(xsim, self.normalization_actions)
         embeddings.normalize(zsim, self.normalization_actions)
-        sim = xsim.dot(zsim.T)
+        sim = xsim @ zsim.T
         if self.csls > 0:
             knn_sim_fwd = topk_mean(sim, k=self.csls)
             knn_sim_bwd = topk_mean(sim.T, k=self.csls)
@@ -291,12 +291,12 @@ class VecMap:
         knn_sim = self.xp.zeros(z_size, dtype=self.dtype)
         if self.csls > 0:
             for b in range(0, z_size, batch_size):
-                sim = z[b:b+batch_size].dot(x[:x_size].T)
+                sim = z[b:b+batch_size] @ x[:x_size].T
                 knn_sim[b:b+batch_size] = topk_mean(sim, k=self.csls, inplace=True)
         best_sim = self.xp.full(x_size, -100, dtype=self.dtype)
         indices = self.xp.zeros(x_size, dtype=int)
         for b in range(0, x_size, batch_size):
-            sim = x[b:b+batch_size].dot(z[:z_size].T)
+            sim = x[b:b+batch_size] @ z[:z_size].T
             best_sim[b:b+batch_size] = sim.max(axis=1)
             sim -= knn_sim/2
             indices[b:b+batch_size] = dropout(sim, 1 - keep_prob).argmax(axis=1)
@@ -331,7 +331,7 @@ class VecMap:
 
     def validate(self, x, z):
         src = list(self.validation_set.keys())
-        simval = x[src].dot(z.T)
+        simval = x[src] @ z.T
         nn = asnumpy(simval.argmax(axis=1))
         accuracy = np.mean([(nn[i] in self.validation_set[src[i]]) for i in range(len(src))])
         similarity = np.mean([max([simval[i, j].tolist() for j in self.validation_set[src[i]]]) for i in range(len(src))])
@@ -401,20 +401,18 @@ class VecMap:
         while not finish:
             if itr:
                 (self.ix, self.iz), objective = self._rebuild_dictionary(xw, zw, keep_prob, dict_update_batch_size)
-            itr += 1
+
+                if log:
+                    accuracy, similarity = None, None
+                    if self.validation_set:
+                        accuracy, similarity = self.validate(xw, zw)
+
+                    duration = time.time() - t0 if t0 is not None else 0
+                    self._log(itr, duration, objective, keep_prob, similarity, accuracy)
 
             if objective - best_objective >= objective_threshold:
                 last_improvement = itr
                 best_objective = objective
-
-            if log:
-                accuracy, similarity = None, None
-                if self.validation_set:
-                    accuracy, similarity = self.validate(xw, zw)
-
-                duration = time.time() - t0 if t0 is not None else 0
-                self._log(itr, duration, objective, keep_prob, similarity, accuracy)
-                
             if keep_prob >= 1.0:
                 finish = True
             if itr - last_improvement > stochastic_interval:
@@ -423,6 +421,8 @@ class VecMap:
 
             t0 = time.time()
             xw, zw = self._map(self.x, self.ix, self.z, self.iz, finish)
+            
+            itr += 1
 
         self.xw, self.zw = xw, zw
         
